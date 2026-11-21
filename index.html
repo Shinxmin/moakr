@@ -6,13 +6,13 @@
 <title>자산</title>
 <style>
 :root{
-  --bg:#f2f4f6;--card:#fff;--fg:#191f28;--sub:#4e5968;--mute:#8b95a1;--line:#f2f4f6;--field:#f2f4f6;--primary:#3182f6;
+  --bg:#fff;--card:#fff;--fg:#191f28;--sub:#4e5968;--mute:#8b95a1;--line:#f2f4f6;--field:#f2f4f6;--primary:#3182f6;
   --glass:rgba(255,255,255,.72);--glass-b:rgba(255,255,255,.6);--shadow:0 8px 32px rgba(0,0,0,.14);
   --r:16px;
   --c-cash:#3182f6;--c-fx:#f59f00;--c-save:#00b386;
 }
 @media (prefers-color-scheme:dark){
-  :root{--bg:#17171c;--card:#202027;--fg:#f9fafb;--sub:#c3c8d1;--mute:#8b95a1;--line:#2c2c35;--field:#2c2c35;--primary:#4593fc;
+  :root{--bg:#17171c;--card:#17171c;--fg:#f9fafb;--sub:#c3c8d1;--mute:#8b95a1;--line:#2c2c35;--field:#2c2c35;--primary:#4593fc;
   --glass:rgba(40,40,48,.7);--glass-b:rgba(255,255,255,.08);--shadow:0 8px 32px rgba(0,0,0,.5);
   --c-cash:#4593fc;--c-fx:#ffb724;--c-save:#1fc99b}
 }
@@ -20,10 +20,10 @@
 html,body{margin:0;background:var(--bg);color:var(--fg);font-family:"Pretendard",-apple-system,"Noto Sans KR",system-ui,sans-serif;letter-spacing:-.01em}
 header{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 72%,transparent);
   -webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6)}
-.hin{max-width:520px;margin:0 auto;height:calc(56px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 16px 0;display:flex;align-items:center;gap:10px}
+.hin{max-width:520px;margin:0 auto;height:calc(68px + env(safe-area-inset-top));padding:calc(24px + env(safe-area-inset-top)) 16px 12px;display:flex;align-items:center;gap:10px}
 h1{font-size:16px;font-weight:700;letter-spacing:-.02em;margin:0}
 .ava{width:32px;height:32px;border-radius:50%;background:color-mix(in srgb,var(--mute) 22%,var(--bg));color:var(--mute);display:flex;align-items:flex-end;justify-content:center;overflow:hidden;flex:none}
-.ava svg{width:24px;height:24px;display:block;margin-bottom:-3px}
+.ava svg{width:34px;height:34px;display:block;margin-bottom:-5px}
 main{max-width:520px;margin:0 auto;padding:2px 16px calc(32px + env(safe-area-inset-bottom))}
 .card{background:var(--card);border-radius:var(--r)}
 .chart-card{padding:20px 16px;margin-bottom:10px}
