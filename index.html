@@ -15,17 +15,19 @@
   :root{--bg:#17171c;--card:#17171c;--fg:#f9fafb;--sub:#c3c8d1;--mute:#8b95a1;--line:#2c2c35;--field:#2c2c35;--primary:#4593fc;
   --glass:rgba(40,40,48,.7);--glass-b:rgba(255,255,255,.08);--shadow:0 8px 32px rgba(0,0,0,.5);
   --c-cash:#4593fc;--c-fx:#ffb724;--c-save:#1fc99b}
+  .add{background:linear-gradient(145deg,rgba(255,255,255,.22),rgba(255,255,255,.08))!important;border-color:rgba(255,255,255,.18)!important;box-shadow:inset 0 1px 1px rgba(255,255,255,.3),0 4px 14px rgba(0,0,0,.4)!important}
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--fg);font-family:"Pretendard",-apple-system,"Noto Sans KR",system-ui,sans-serif;letter-spacing:-.01em}
 header{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 72%,transparent);
   -webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6)}
 .hin{max-width:520px;margin:0 auto;height:calc(74px + env(safe-area-inset-top));padding:calc(24px + env(safe-area-inset-top)) 16px 12px;display:flex;align-items:center;gap:10px}
-h1{outline:none;min-width:24px;font-size:17px;line-height:1;font-weight:700;letter-spacing:-.02em;margin:0}
-.add{width:var(--ico);min-width:var(--ico);height:var(--ico);margin-left:auto;border-radius:50%;border:0;padding:0;flex:none;background:var(--line);color:var(--fg);cursor:pointer;display:flex;align-items:center;justify-content:center}
+h1{cursor:text;padding:3px 0;border-bottom:2px solid transparent;transition:border-color .15s;outline:none;min-width:24px;font-size:17px;line-height:1;font-weight:700;letter-spacing:-.02em;margin:0}
+h1.editing{border-bottom-color:var(--line)}
+.add{width:var(--ico);min-width:var(--ico);height:var(--ico);margin-left:auto;border-radius:50%;border:0;padding:0;flex:none;background:linear-gradient(145deg,rgba(255,255,255,.95),rgba(255,255,255,.5));border:1px solid rgba(255,255,255,.95);-webkit-backdrop-filter:blur(14px) saturate(1.8);backdrop-filter:blur(14px) saturate(1.8);box-shadow:inset 0 1px 1px #fff,inset 0 -2px 4px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.12),0 1px 3px rgba(0,0,0,.08);color:var(--fg);cursor:pointer;display:flex;align-items:center;justify-content:center}
 .add svg{display:block;width:16px;height:16px}
 .add:active{transform:scale(.92)}
-.ava{cursor:pointer;width:var(--ico);min-width:var(--ico);height:var(--ico);border-radius:50%;background:color-mix(in srgb,var(--mute) 22%,var(--bg));color:var(--mute);display:flex;align-items:flex-end;justify-content:center;overflow:hidden;flex:none}
+.ava{width:var(--ico);min-width:var(--ico);height:var(--ico);border-radius:50%;background:color-mix(in srgb,var(--mute) 22%,var(--bg));color:var(--mute);display:flex;align-items:flex-end;justify-content:center;overflow:hidden;flex:none}
 .ava svg{width:46px;height:46px;display:block;margin-bottom:-8px}
 main{max-width:520px;margin:0 auto;padding:2px 16px calc(32px + env(safe-area-inset-bottom))}
 .card{background:var(--card);border-radius:var(--r)}
@@ -205,11 +207,11 @@ $('#cur').addEventListener('change',reAmt);
 // profile name
 const nmEl=$('#nm');
 nmEl.textContent=ls.get('name','사용자');
-$('#ava').onclick=()=>{nmEl.contentEditable='plaintext-only';nmEl.focus();const g=getSelection(),rg=document.createRange();rg.selectNodeContents(nmEl);g.removeAllRanges();g.addRange(rg)};
+nmEl.addEventListener('click',()=>{if(nmEl.isContentEditable)return;nmEl.classList.add('editing');nmEl.contentEditable='plaintext-only';nmEl.focus();const g=getSelection(),rg=document.createRange();rg.selectNodeContents(nmEl);g.removeAllRanges();g.addRange(rg)});
 nmEl.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();nmEl.blur()}});
 nmEl.addEventListener('input',()=>{if(nmEl.textContent.length>20)nmEl.textContent=nmEl.textContent.slice(0,20)});
 nmEl.addEventListener('blur',()=>{
-  nmEl.contentEditable='false';
+  nmEl.contentEditable='false';nmEl.classList.remove('editing');
   const v=nmEl.textContent.trim();
   if(v)ls.set('name',v);else nmEl.textContent=ls.get('name','사용자');
   getSelection().removeAllRanges();
