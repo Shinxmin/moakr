@@ -18,10 +18,13 @@
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--fg);font-family:"Pretendard",-apple-system,"Noto Sans KR",system-ui,sans-serif;letter-spacing:-.01em}
-header{position:sticky;top:0;z-index:10;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--bg) 72%,transparent);
+header{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 72%,transparent);
   -webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6)}
 .hin{max-width:520px;margin:0 auto;height:calc(74px + env(safe-area-inset-top));padding:calc(24px + env(safe-area-inset-top)) 16px 12px;display:flex;align-items:center;gap:10px}
 h1{font-size:17px;line-height:1;font-weight:700;letter-spacing:-.02em;margin:0}
+.add{width:38px;height:38px;margin-left:auto;border-radius:50%;border:0;padding:0;flex:none;background:color-mix(in srgb,var(--primary) 14%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:var(--primary);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.add svg{display:block;width:16px;height:16px}
+.add:active{transform:scale(.92)}
 .ava{width:38px;height:38px;border-radius:50%;background:color-mix(in srgb,var(--mute) 22%,var(--bg));color:var(--mute);display:flex;align-items:flex-end;justify-content:center;overflow:hidden;flex:none}
 .ava svg{width:46px;height:46px;display:block;margin-bottom:-8px}
 main{max-width:520px;margin:0 auto;padding:2px 16px calc(32px + env(safe-area-inset-bottom))}
@@ -37,14 +40,14 @@ main{max-width:520px;margin:0 auto;padding:2px 16px calc(32px + env(safe-area-in
 .center b{font-size:19px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .pill{display:inline-block;flex:none;min-width:40px;text-align:center;font-size:10px;line-height:1;padding:4px 7px;border-radius:999px;font-weight:600;color:#fff;background:var(--pc)}
 .t-cash{--pc:var(--c-cash)}.t-fx{--pc:var(--c-fx)}.t-save{--pc:var(--c-save)}
-#tip{position:fixed;z-index:20;pointer-events:none;min-width:128px;max-width:210px;padding:11px 13px;border-radius:var(--r);
+#tip{position:fixed;z-index:20;pointer-events:none;min-width:200px;max-width:300px;padding:12px 14px;border-radius:var(--r);
   background:var(--glass);border:1px solid var(--glass-b);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);
   box-shadow:var(--shadow);opacity:0;transform:translateY(4px);transition:opacity .12s,transform .12s}
 #tip.show{opacity:1;transform:none}
-#tip .pill{margin-bottom:8px}
-#tip .n{font-size:12px;font-weight:600;margin-bottom:4px;word-break:break-all}
+#tip .h{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+#tip .n{font-size:12px;font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #tip .a{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
-#tip .k{font-size:10px;color:var(--mute);margin-top:3px;font-variant-numeric:tabular-nums}
+#tip .k{font-size:10px;font-weight:400;color:var(--mute);margin-left:8px;font-variant-numeric:tabular-nums}
 .list{border-radius:0;border-top:1px solid var(--line);padding:10px 6px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .list:empty{display:none}
 .row{display:flex;align-items:center;gap:8px;padding:12px 10px;border-radius:12px;cursor:pointer;transition:background .15s,transform .15s}
@@ -77,7 +80,7 @@ input:focus,select:focus{border-color:var(--primary)}
 </style>
 </head>
 <body>
-<header><div class="hin"><span class="ava"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="9" r="4"/><path d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7z"/></svg></span><h1>사용자</h1></div></header>
+<header><div class="hin"><span class="ava"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="9" r="4"/><path d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7z"/></svg></span><h1>사용자</h1><button class="add" id="add" aria-label="추가"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 3v12M3 9h12"/></svg></button></div></header>
 <main>
   <div class="card chart-card"><div class="chart" id="chart">
     <svg viewBox="0 0 200 200" id="svg"></svg>
@@ -155,7 +158,7 @@ function render(){
 const tip=$('#tip');
 function showTip(id,x,y){
   const i=items.find(v=>v.id===id);if(!i)return;
-  tip.innerHTML=`${pill(i.type)}<div class="n">${esc(i.name)}</div><div class="a">${main(i)}</div>${sub(i)?`<div class="k">${sub(i)}</div>`:''}`;
+  tip.innerHTML=`<div class="h">${pill(i.type)}<span class="n">${esc(i.name)}</span></div><div class="a">${main(i)}${sub(i)?`<span class="k">${sub(i)}</span>`:''}</div>`;
   tip.classList.add('show');
   const w=tip.offsetWidth,hh=tip.offsetHeight;
   let l=x+16,t=y-hh-14;
@@ -218,6 +221,7 @@ function openModal(id){
   setTimeout(()=>$('#name').focus(),50);
 }
 const closeModal=()=>$('#ov').classList.remove('open');
+$('#add').onclick=()=>openModal();
 $('#cancel').onclick=closeModal;
 $('#ov').addEventListener('pointerdown',e=>{if(e.target.id==='ov')closeModal()});
 $('#del').onclick=()=>{items=items.filter(v=>v.id!==editId);save();closeModal()};
