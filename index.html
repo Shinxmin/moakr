@@ -6,7 +6,7 @@
 <title>자산</title>
 <style>
 :root{
-  --bg:#fff;--card:#fff;--fg:#191f28;--sub:#4e5968;--mute:#8b95a1;--line:#f2f4f6;--field:#f2f4f6;--primary:#3182f6;
+  --bg:#fff;--card:#fff;--fg:#191f28;--sub:#4e5968;--mute:#8b95a1;--line:#e5e8eb;--field:#f2f4f6;--primary:#3182f6;
   --glass:rgba(255,255,255,.72);--glass-b:rgba(255,255,255,.6);--shadow:0 8px 32px rgba(0,0,0,.14);
   --r:16px;
   --c-cash:#3182f6;--c-fx:#f59f00;--c-save:#00b386;
@@ -18,15 +18,15 @@
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--fg);font-family:"Pretendard",-apple-system,"Noto Sans KR",system-ui,sans-serif;letter-spacing:-.01em}
-header{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 72%,transparent);
+header{position:sticky;top:0;z-index:10;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--bg) 72%,transparent);
   -webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6)}
-.hin{max-width:520px;margin:0 auto;height:calc(68px + env(safe-area-inset-top));padding:calc(24px + env(safe-area-inset-top)) 16px 12px;display:flex;align-items:center;gap:10px}
-h1{font-size:16px;font-weight:700;letter-spacing:-.02em;margin:0}
-.ava{width:32px;height:32px;border-radius:50%;background:color-mix(in srgb,var(--mute) 22%,var(--bg));color:var(--mute);display:flex;align-items:flex-end;justify-content:center;overflow:hidden;flex:none}
-.ava svg{width:34px;height:34px;display:block;margin-bottom:-5px}
+.hin{max-width:520px;margin:0 auto;height:calc(74px + env(safe-area-inset-top));padding:calc(24px + env(safe-area-inset-top)) 16px 12px;display:flex;align-items:center;gap:10px}
+h1{font-size:17px;line-height:1;font-weight:700;letter-spacing:-.02em;margin:0}
+.ava{width:38px;height:38px;border-radius:50%;background:color-mix(in srgb,var(--mute) 22%,var(--bg));color:var(--mute);display:flex;align-items:flex-end;justify-content:center;overflow:hidden;flex:none}
+.ava svg{width:46px;height:46px;display:block;margin-bottom:-8px}
 main{max-width:520px;margin:0 auto;padding:2px 16px calc(32px + env(safe-area-inset-bottom))}
 .card{background:var(--card);border-radius:var(--r)}
-.chart-card{padding:20px 16px;margin-bottom:10px}
+.chart-card{padding:20px 16px 28px;margin-bottom:0}
 .chart{position:relative;width:min(100%,236px);margin:0 auto;aspect-ratio:1}
 .chart svg{width:100%;height:100%;display:block;overflow:visible;touch-action:pan-y}
 .seg{fill:none;stroke-width:20;transition:stroke-width .15s,opacity .15s;cursor:pointer}
@@ -45,7 +45,7 @@ main{max-width:520px;margin:0 auto;padding:2px 16px calc(32px + env(safe-area-in
 #tip .n{font-size:12px;font-weight:600;margin-bottom:4px;word-break:break-all}
 #tip .a{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
 #tip .k{font-size:10px;color:var(--mute);margin-top:3px;font-variant-numeric:tabular-nums}
-.list{padding:6px 6px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.list{border-radius:0;border-top:1px solid var(--line);padding:10px 6px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .list:empty{display:none}
 .row{display:flex;align-items:center;gap:8px;padding:12px 10px;border-radius:12px;cursor:pointer;transition:background .15s,transform .15s}
 .row.press{background:var(--field);transform:scale(.985)}
