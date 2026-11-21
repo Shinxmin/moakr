@@ -21,11 +21,11 @@ html,body{margin:0;background:var(--bg);color:var(--fg);font-family:"Pretendard"
 header{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 72%,transparent);
   -webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6)}
 .hin{max-width:520px;margin:0 auto;height:calc(74px + env(safe-area-inset-top));padding:calc(24px + env(safe-area-inset-top)) 16px 12px;display:flex;align-items:center;gap:10px}
-h1{font-size:17px;line-height:1;font-weight:700;letter-spacing:-.02em;margin:0}
-.add{width:38px;height:38px;margin-left:auto;border-radius:50%;border:0;padding:0;flex:none;background:color-mix(in srgb,var(--primary) 14%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:var(--primary);cursor:pointer;display:flex;align-items:center;justify-content:center}
+h1{outline:none;min-width:24px;font-size:17px;line-height:1;font-weight:700;letter-spacing:-.02em;margin:0}
+.add{width:38px;height:38px;margin-left:auto;border-radius:50%;border:0;padding:0;flex:none;background:var(--fg);color:var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center}
 .add svg{display:block;width:16px;height:16px}
 .add:active{transform:scale(.92)}
-.ava{width:38px;height:38px;border-radius:50%;background:color-mix(in srgb,var(--mute) 22%,var(--bg));color:var(--mute);display:flex;align-items:flex-end;justify-content:center;overflow:hidden;flex:none}
+.ava{cursor:pointer;width:38px;height:38px;border-radius:50%;background:color-mix(in srgb,var(--mute) 22%,var(--bg));color:var(--mute);display:flex;align-items:flex-end;justify-content:center;overflow:hidden;flex:none}
 .ava svg{width:46px;height:46px;display:block;margin-bottom:-8px}
 main{max-width:520px;margin:0 auto;padding:2px 16px calc(32px + env(safe-area-inset-bottom))}
 .card{background:var(--card);border-radius:var(--r)}
@@ -80,7 +80,7 @@ input:focus,select:focus{border-color:var(--primary)}
 </style>
 </head>
 <body>
-<header><div class="hin"><span class="ava"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="9" r="4"/><path d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7z"/></svg></span><h1>사용자</h1><button class="add" id="add" aria-label="추가"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 3v12M3 9h12"/></svg></button></div></header>
+<header><div class="hin"><span class="ava" id="ava"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="9" r="4"/><path d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7z"/></svg></span><h1 id="nm" spellcheck="false">사용자</h1><button class="add" id="add" aria-label="추가"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 3v12M3 9h12"/></svg></button></div></header>
 <main>
   <div class="card chart-card"><div class="chart" id="chart">
     <svg viewBox="0 0 200 200" id="svg"></svg>
@@ -201,6 +201,19 @@ function reAmt(){
 }
 amtEl.addEventListener('input',reAmt);
 $('#cur').addEventListener('change',reAmt);
+
+// profile name
+const nmEl=$('#nm');
+nmEl.textContent=ls.get('name','사용자');
+$('#ava').onclick=()=>{nmEl.contentEditable='plaintext-only';nmEl.focus();const g=getSelection(),rg=document.createRange();rg.selectNodeContents(nmEl);g.removeAllRanges();g.addRange(rg)};
+nmEl.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();nmEl.blur()}});
+nmEl.addEventListener('input',()=>{if(nmEl.textContent.length>20)nmEl.textContent=nmEl.textContent.slice(0,20)});
+nmEl.addEventListener('blur',()=>{
+  nmEl.contentEditable='false';
+  const v=nmEl.textContent.trim();
+  if(v)ls.set('name',v);else nmEl.textContent=ls.get('name','사용자');
+  getSelection().removeAllRanges();
+});
 
 // modal
 function buildTypes(){
