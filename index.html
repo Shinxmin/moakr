@@ -50,10 +50,11 @@ main{max-width:520px;margin:0 auto;padding:calc(76px + env(safe-area-inset-top))
 #tip .n{font-size:12px;font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #tip .a{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
 #tip .k{font-size:10px;font-weight:400;color:var(--mute);margin-left:8px;font-variant-numeric:tabular-nums}
-.list{border-radius:0;border-top:1px solid var(--line);padding:10px 6px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.list{position:relative;border-radius:0;border-top:1px solid var(--line);padding:10px 6px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .list:empty{display:none}
-.row{display:flex;align-items:center;gap:8px;padding:12px 10px;border-radius:12px;cursor:pointer;transition:background .15s,transform .15s}
-.row.press{background:var(--field);transform:scale(.985)}
+.row{display:flex;align-items:center;gap:8px;padding:18px 10px;border-radius:12px;cursor:pointer;touch-action:pan-y;transition:background .15s,transform .2s}
+.row.press{background:var(--field)}
+.row.drag{position:relative;z-index:5;background:var(--card);box-shadow:var(--shadow);transition:none;cursor:grabbing}
 .row .nm{flex:1;min-width:0;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row .r{text-align:right;font-variant-numeric:tabular-nums;flex:none}
 .row .r b{display:block;font-size:13px;font-weight:700}
@@ -252,17 +253,52 @@ $('#form').onsubmit=e=>{
 };
 function save(){ls.set('assets',items);render()}
 
-// long press
-let pt=null,pressed=false,sx=0,sy=0;
+// tap = edit, long press = drag to reorder
 const list=$('#list');
+let pt=null,st=null,dr=null;
+const rows=()=>[...list.querySelectorAll('.row')];
+function endPress(){clearTimeout(pt);document.querySelectorAll('.row.press').forEach(r=>r.classList.remove('press'))}
 list.addEventListener('pointerdown',e=>{
-  const r=e.target.closest('.row');if(!r)return;
-  pressed=false;sx=e.clientX;sy=e.clientY;r.classList.add('press');
-  pt=setTimeout(()=>{pressed=true;r.classList.remove('press');navigator.vibrate&&navigator.vibrate(10);openModal(r.dataset.id)},500);
+  const row=e.target.closest('.row');if(!row||dr)return;
+  st={row,id:row.dataset.id,x:e.clientX,y:e.clientY};
+  row.classList.add('press');
+  pt=setTimeout(startDrag,420);
 });
-const cancelP=()=>{clearTimeout(pt);document.querySelectorAll('.row.press').forEach(r=>r.classList.remove('press'))};
-list.addEventListener('pointermove',e=>{if(Math.hypot(e.clientX-sx,e.clientY-sy)>8)cancelP()});
-['pointerup','pointerleave','pointercancel'].forEach(t=>list.addEventListener(t,cancelP));
+function startDrag(){
+  const row=list.querySelector(`.row[data-id="${st.id}"]`);if(!row){st=null;return}row.classList.remove('press');
+  const all=rows(),rects=all.map(x=>x.getBoundingClientRect()),d=all.indexOf(row);
+  navigator.vibrate&&navigator.vibrate(10);
+  dr={row,all,d,t:d,h:rects[d].height,mid:rects.map(r=>r.top+r.height/2),grab:st.y-rects[d].top,top0:rects[d].top,sy:scrollY};
+  row.classList.add('drag');hideTip();
+}
+function moveDrag(y){
+  const ds=scrollY-dr.sy;
+  dr.row.style.transform=`translateY(${y-dr.grab-dr.top0-ds}px) scale(1.02)`;
+  const c=y-dr.grab+dr.h/2-ds;
+  let t=0;dr.mid.forEach((m,k)=>{if(k!==dr.d&&m<c)t++});
+  dr.t=t;
+  dr.all.forEach((x,k)=>{
+    if(k===dr.d)return;
+    let o=0;
+    if(t>dr.d&&k>dr.d&&k<=t)o=-dr.h;
+    if(t<dr.d&&k>=t&&k<dr.d)o=dr.h;
+    x.style.transform=o?`translateY(${o}px)`:'';
+  });
+}
+document.addEventListener('pointermove',e=>{
+  if(dr){moveDrag(e.clientY);return}
+  if(st&&Math.hypot(e.clientX-st.x,e.clientY-st.y)>8){endPress();st=null}
+});
+document.addEventListener('pointerup',()=>{
+  if(dr){
+    const ids=dr.all.map(x=>x.dataset.id),mv=ids.splice(dr.d,1)[0];ids.splice(dr.t,0,mv);
+    items=ids.map(id=>items.find(v=>v.id===id));
+    dr=null;st=null;save();return;
+  }
+  if(st){const row=st.row;endPress();st=null;if(!$('#ov').classList.contains('open'))openModal(row.dataset.id)}
+});
+document.addEventListener('pointercancel',()=>{endPress();if(!dr)st=null});
+document.addEventListener('touchmove',e=>{if(dr)e.preventDefault()},{passive:false});
 list.addEventListener('contextmenu',e=>e.preventDefault());
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
 
@@ -279,7 +315,7 @@ async function loadRates(){
       for(const c of Object.keys(CURS))if(j.rates&&j.rates[c])rates[c]=1/j.rates[c];
     }catch{}
   }
-  ls.set('rates',rates);render();
+  ls.set('rates',rates);if(!dr)render();
 }
 render();loadRates();setInterval(loadRates,300000);
 matchMedia('(prefers-color-scheme:dark)').addEventListener('change',render);
