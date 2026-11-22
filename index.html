@@ -162,12 +162,12 @@ nav span{font-size:10px;font-weight:600;line-height:1}
 </main>
 <div class="dock"><nav id="nav"><i class="ind" id="ind"></i>
   <button class="on" data-i="0"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg><span>자산</span></button>
-  <button data-i="1"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10.5h18M7 15h4"/></svg><span>소비</span></button>
+  <button data-i="1"><svg viewBox="0 0 24 24"><path d="M5 20v-8M12 20V5M19 20v-5"/></svg><span>통계</span></button>
 </nav><button class="add" id="add" aria-label="추가"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M9 3v12M3 9h12"/></svg></button></div>
 <div id="tip"></div>
 <div class="ov" id="ov2"><form class="modal" id="iform" autocomplete="off">
   <h2 id="imt">내역 추가</h2>
-  <div class="seg-t" id="ktypes"><button type="button" data-k="in" class="on">수입</button><button type="button" data-k="out">지출</button></div>
+  <div class="seg-t" id="ktypes"><button type="button" data-k="in" class="on">소득</button><button type="button" data-k="out">지출</button></div>
   <label class="f"><input id="iname" placeholder="내역명" required maxlength="30"></label>
   <label class="f"><input id="iamt" placeholder="금액" inputmode="numeric" required></label>
   <label class="f"><select id="iacct" required></select></label>
@@ -200,7 +200,7 @@ nav span{font-size:10px;font-weight:600;line-height:1}
 const TYPES={cash:'입출금',fx:'외화',save:'예적금',sec:'증권'};
 const CURS={USD:'$',JPY:'¥',CNY:'CN¥'};
 const COLORS={cash:'--c-cash',fx:'--c-fx',save:'--c-save',in:'--c-in',out:'--c-out',sec:'--c-sec'};
-const LBL={cash:'입출금',fx:'외화',save:'예적금',in:'수입',out:'지출',sec:'증권',rest:'잔액'};
+const LBL={cash:'입출금',fx:'외화',save:'예적금',in:'소득',out:'지출',sec:'증권',rest:'잔액'};
 const $=s=>document.querySelector(s);
 const ls={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
 let items=ls.get('assets',[]);
@@ -337,7 +337,7 @@ function sankey(svg,ins,outs,I,E){
   for(let t=0;t<40&&Math.max(colH(L,k),colH(R,k))>H;t++)k*=.94;
   const place=c=>{let y=PAD+(H-colH(c,k))/2;c.forEach(x=>{x.h=Math.max(x.amount*k,MINH);x.y=y;y+=x.h+GAP})};
   place(L);place(R);
-  const mh=Math.max(T*k,MINH),M={id:'inc',type:'in',name:'수입',amount:I,y:PAD+(H-mh)/2,h:mh};
+  const mh=Math.max(T*k,MINH),M={id:'inc',type:'in',name:'소득',amount:I,y:PAD+(H-mh)/2,h:mh};
   const col=(x,i)=>x.type==='in'?`color-mix(in srgb,var(--c-in) ${Math.max(50,100-i*12)}%,var(--bg))`:x.type==='out'?`color-mix(in srgb,var(--c-out) ${Math.max(50,100-i*12)}%,var(--bg))`:'var(--mute)';
   const XL=64,XM=176,XR=282,BW=8;
   const rib=(x0,y0,y1,x1,z0,z1,c)=>{const m=(x0+x1)/2;return `<path d="M${x0} ${y0}C${m} ${y0} ${m} ${z0} ${x1} ${z0}L${x1} ${z1}C${m} ${z1} ${m} ${y1} ${x0} ${y1}Z" style="fill:${c};opacity:.22"/>`};
@@ -364,9 +364,9 @@ function renderIncome(){
   const mk=k=>flows.filter(f=>f.kind===k&&f.month===key).map(f=>({id:'f:'+f.id,fid:f.id,type:k,name:f.name,amount:f.amount,note:nm(f.acct)})).sort((a,b)=>b.amount-a.amount);
   const ins=mk('in'),outs=mk('out');
   const I=ins.reduce((s,x)=>s+x.amount,0),E=outs.reduce((s,x)=>s+x.amount,0);
-  poolI=[{id:'inc',type:'in',name:'수입 합계',amount:I},...ins,...outs,{id:'rest',type:'rest',name:'잔액',amount:I-E},{id:'def',type:'rest',name:'부족',amount:E-I}];
+  poolI=[{id:'inc',type:'in',name:'소득 합계',amount:I},...ins,...outs,{id:'rest',type:'rest',name:'잔액',amount:I-E},{id:'def',type:'rest',name:'부족',amount:E-I}];
   $('#itotal').textContent=(I-E<0?'-':'')+'₩'+fmt(Math.abs(I-E));
-  $('#idelta').innerHTML=(I||E)?`<div>수입 ₩${fmt(I)}</div><div>지출 ₩${fmt(E)}</div>`:'';
+  $('#idelta').innerHTML=(I||E)?`<div>소득 ₩${fmt(I)}</div><div>지출 ₩${fmt(E)}</div>`:'';
   $('#imlabel').textContent=`${Math.floor(M/12)}년 ${M%12+1}월`;
   sankey($('#isvg'),ins,outs,I,E);
   $('#ilist').innerHTML=[...ins,...outs].map(i=>`<div class="row${i.type==='out'?' ex':''}" data-fid="${i.fid}">${rowHtml(i)}</div>`).join('');
