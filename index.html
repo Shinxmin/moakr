@@ -20,7 +20,8 @@
   nav .ind{background:rgba(255,255,255,.12)!important}
   .add{background:linear-gradient(145deg,rgba(255,255,255,.22),rgba(255,255,255,.08))!important;border-color:rgba(255,255,255,.18)!important;box-shadow:inset 0 1px 1px rgba(255,255,255,.3),0 4px 14px rgba(0,0,0,.4)!important}
 }
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,select,[contenteditable]{-webkit-user-select:text;user-select:text}
 html,body{margin:0;background:var(--bg);color:var(--fg);font-family:"Pretendard",-apple-system,"Noto Sans KR",system-ui,sans-serif;letter-spacing:-.01em}
 header{position:fixed;top:0;left:0;right:0;z-index:10;background:rgba(255,255,255,.55);-webkit-backdrop-filter:blur(22px) saturate(1.8);backdrop-filter:blur(22px) saturate(1.8)}
 .hin{max-width:520px;margin:0 auto;height:calc(66px + env(safe-area-inset-top));padding:calc(16px + env(safe-area-inset-top)) 16px 12px;display:flex;align-items:center;gap:10px}
@@ -143,7 +144,6 @@ nav span{font-size:10px;font-weight:600;line-height:1}
 .sp .dl{margin-top:8px;line-height:1.6}
 .sk{margin:24px -16px 0;padding:24px 16px 0;border-top:1px solid var(--line)}
 .sk svg{width:100%;display:block;overflow:visible;touch-action:pan-y}
-.sn{cursor:pointer}
 .t-rest{--pc:var(--mute)}
 </style>
 </head>
@@ -359,15 +359,13 @@ function sankey(svg,ins,outs,I,E){
   const cut=s=>s.length>5?s.slice(0,4)+'…':s;
   const node=(nd,x,i,anchor,tx)=>{
     const cy=nd.y+nd.h/2;
-    nodes+=`<rect class="sn" data-id="${nd.id}" x="${x}" y="${nd.y}" width="${BW}" height="${nd.h}" style="fill:${col(nd,i)}"/>`
-      +`<text class="sn" data-id="${nd.id}" x="${tx}" y="${cy-2}" text-anchor="${anchor}" style="font-size:12px;font-weight:600;fill:var(--fg)">${esc(cut(nd.name))}</text>`
-      +`<text class="sn" data-id="${nd.id}" x="${tx}" y="${cy+12}" text-anchor="${anchor}" style="font-size:11px;fill:var(--mute)">₩${fmt(nd.amount)}</text>`
-      +`<rect class="sn" data-id="${nd.id}" x="${x-10}" y="${nd.y-4}" width="${BW+20}" height="${nd.h+8}" style="fill:transparent"/>`;
+    nodes+=`<rect data-id="${nd.id}" x="${x}" y="${nd.y}" width="${BW}" height="${nd.h}" style="fill:${col(nd,i)}"/>`
+      +`<text x="${tx}" y="${cy-2}" text-anchor="${anchor}" style="font-size:12px;font-weight:600;fill:var(--fg)">${esc(cut(nd.name))}</text>`
+      +`<text x="${tx}" y="${cy+12}" text-anchor="${anchor}" style="font-size:11px;fill:var(--mute)">₩${fmt(nd.amount)}</text>`;
   };
   L.forEach((nd,i)=>node(nd,XL,i,'end',XL-8));
   R.forEach((nd,i)=>node(nd,XR,i,'start',XR+BW+8));
-  nodes+=`<rect class="sn" data-id="inc" x="${XM}" y="${M.y}" width="${BW}" height="${M.h}" style="fill:${col(M,0)}"/>`
-    +`<rect class="sn" data-id="inc" x="${XM-12}" y="${M.y}" width="${BW+24}" height="${M.h}" style="fill:transparent"/>`;
+  nodes+=`<rect data-id="inc" x="${XM}" y="${M.y}" width="${BW}" height="${M.h}" style="fill:${col(M,0)}"/>`;
   svg.setAttribute('viewBox',`0 0 360 ${H+PAD+10}`);
   svg.innerHTML=links+nodes;
 }
@@ -413,7 +411,7 @@ function bindChart(svg,pool){
   svg.addEventListener('pointerdown',probe);
   svg.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')hideTip()});
 }
-bindChart($('#svg'),()=>poolA);bindChart($('#isvg'),()=>poolI);
+bindChart($('#svg'),()=>poolA);
 document.addEventListener('pointerdown',e=>{if(!e.target.closest('.chart svg,.sk svg'))hideTip()});
 
 // amount input
@@ -453,6 +451,10 @@ nmEl.addEventListener('blur',()=>{
   if(v){ls.set('name',v);push()}else nmEl.textContent=ls.get('name','사용자');
   getSelection().removeAllRanges();
 });
+
+// disable copy / cut / paste / context menu / drag
+['copy','cut','paste','contextmenu','dragstart'].forEach(t=>document.addEventListener(t,e=>e.preventDefault()));
+document.addEventListener('selectstart',e=>{if(!e.target.closest||!e.target.closest('input,select,[contenteditable]'))e.preventDefault()});
 
 // tabs
 let tab=0;
