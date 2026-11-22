@@ -179,7 +179,7 @@ nav .tabs span{font-size:10px;font-weight:600;line-height:1}
 .z2.empty svg{display:none}
 .z2.empty .emp{display:block}
 .z3{top:65%;height:35%;padding:12px 16px calc(76px + env(safe-area-inset-bottom));border-top:1px solid var(--line);display:flex;justify-content:center}
-.z3 svg{width:60%;height:100%;display:block}
+.z3 svg{width:60%;height:100%;display:block;transform:translateY(-15px)}
 .t-rest{--pc:var(--mute)}
 </style>
 </head>
@@ -423,12 +423,13 @@ function totalAt(m){
 const fmtMan=v=>{const m=Math.round(v/10000);return (m<0?'-':'')+fmt(Math.abs(m))+'만원'};
 function renderTrend(){
   const b=baseM(),sel=imo;
-  const ref=totalAt(sel);
   const items4=[-2,-1,0,1].map(k=>{
     const m=sel+k,v=totalAt(m);
-    const has=k===1?sel<=0:k===0?true:(m>=0||flows.some(f=>f.month===keyOf(b+m)));
+    const rec=m>=0||flows.some(f=>f.month===keyOf(b+m));
+    const has=k===1&&sel>0?false:rec;
     return {k,m,v,has,est:k===1&&sel===0,label:`${(b+m)%12+1}월`};
   });
+  const ctr=items4[2],ref=ctr.has?ctr.v:0;
   const mx=Math.max(...items4.filter(x=>x.has).map(x=>x.v),0);
   const Hc=58,Hmax=88,base=126;
   const sc=ref>0?Hc/ref:(mx>0?Hmax/mx:0);
