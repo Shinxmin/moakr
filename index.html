@@ -164,13 +164,15 @@ nav .tabs span{font-size:10px;font-weight:600;line-height:1}
 .cm{padding:14px 16px;margin-bottom:4px}
 .cemp{padding:60px 0;text-align:center;font-size:14px;color:var(--mute)}
 .emp{display:none;font-size:14px;color:var(--mute)}
-.sk.empty{display:flex;align-items:center;justify-content:center;padding-top:0}
+.sk.empty{display:flex;align-items:center;justify-content:center;padding-top:0;min-height:180px}
 .sk.empty svg{display:none}
 .sk.empty .emp{display:block}
 .sdiv{margin:20px 0 0}
 .sp b{display:block;margin-top:0;font-size:24px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .sp .dl{margin-top:8px;line-height:1.6}
 .sk{margin:24px -16px 0;padding:24px 16px 0;border-top:1px solid var(--line)}
+.tr{margin:24px -16px 0;padding:24px 16px 0;border-top:1px solid var(--line)}
+.tr svg{width:100%;display:block}
 .sk svg{width:100%;display:block;overflow:visible;touch-action:pan-y}
 .t-rest{--pc:var(--mute)}
 </style>
@@ -195,6 +197,7 @@ nav .tabs span{font-size:10px;font-weight:600;line-height:1}
     <div class="mo"><button id="imp" aria-label="이전 달"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><span id="imlabel"></span><button id="imn" aria-label="다음 달"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button></div>
     <div class="sdiv" id="idelta"></div>
     <div class="sk" id="sk"><svg id="isvg" viewBox="0 0 360 1"></svg><div class="emp" id="iemp">데이터가 없습니다</div></div>
+    <div class="tr"><svg id="tsvg" viewBox="0 0 360 150"></svg></div>
   </div>
 </div>
 </main>
@@ -395,18 +398,34 @@ function sankey(svg,ins,outs,I,E){
   svg.setAttribute('viewBox',`0 0 360 ${H+PAD+10}`);
   svg.innerHTML=links+nodes;
 }
-function fitSankey(){
-  if(tab!==2)return;
-  const sk=$('#sk'),lim0=document.querySelector('.dock').getBoundingClientRect().top-10;
-  if(sk.classList.contains('empty')){sk.style.height='';sk.style.height=Math.max(80,lim0-sk.getBoundingClientRect().top)+'px';return}
-  sk.style.height='';
-  const svg=$('#isvg'),vb=svg.viewBox.baseVal;
-  if(!vb||vb.height<=1){svg.style.height='';return}
-  const nat=svg.clientWidth*vb.height/vb.width;
-  const top=svg.getBoundingClientRect().top,lim=document.querySelector('.dock').getBoundingClientRect().top-10;
-  svg.style.height=Math.max(60,Math.min(nat,lim-top))+'px';
-}
+function fitSankey(){}
 addEventListener('resize',fitSankey);
+
+function flowNet(M){
+  let n=0;
+  flows.forEach(f=>{
+    const [y,m]=String(f.month).split('-').map(Number);if(!y||!m)return;
+    const st=y*12+m-1,hit=f.monthly?M>=st:M===st;
+    if(hit)n+=f.kind==='in'?f.amount:-f.amount;
+  });
+  return n;
+}
+function renderTrend(){
+  const b=baseM(),t1=build(-1).net;
+  const vals=[t1-flowNet(b-1),t1,build(0).net,build(1).net];
+  const ref=vals[2],mx=Math.max(...vals,0);
+  const Hc=70,Hmax=105,base=118;
+  const sc=ref>0?Hc/ref:(mx>0?Hmax/mx:0);
+  let h='';
+  vals.forEach((v,i)=>{
+    const bh=v>0?Math.min(Hmax,Math.max(2,v*sc)):2,cx=45+90*i;
+    const fill=i===2?'var(--sub)':i===3?'color-mix(in srgb,var(--mute) 22%,var(--bg))':'color-mix(in srgb,var(--mute) 45%,var(--bg))';
+    const ex=i===3?' stroke="var(--mute)" stroke-width="1.5" stroke-dasharray="4 3"':'';
+    h+=`<rect x="${cx-26}" y="${base-bh}" width="52" height="${bh}" rx="6" style="fill:${fill}"${ex}/>`
+      +`<text x="${cx}" y="141" text-anchor="middle" style="font-size:12px;font-weight:${i===2?700:500};fill:${i===2?'var(--fg)':'var(--mute)'}">${(b+i-2)%12+1}월</text>`;
+  });
+  $('#tsvg').innerHTML=h;
+}
 function renderIncome(){
   const M=baseM()+imo,key=keyOf(M);
   const nm=id=>(items.find(i=>i.id===id)||{}).name||'';
@@ -419,6 +438,7 @@ function renderIncome(){
   $('#cmlabel').textContent=`${Math.floor(M/12)}년 ${M%12+1}월`;
   $('#clist').innerHTML=(ins.length||outs.length)?[...ins,...outs].map(i=>`<div class="row${i.type==='out'?' ex':''}" data-fid="${i.fid}">${rowHtml(i)}</div>`).join(''):'<div class="cemp">데이터가 없습니다</div>';
   $('#imlabel').textContent=`${Math.floor(M/12)}년 ${M%12+1}월`;
+  renderTrend();
   $('#sk').classList.toggle('empty',!(I||E));
   sankey($('#isvg'),ins,outs,I,E);fitSankey();
 }
@@ -515,10 +535,8 @@ document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));
   $('#ind').style.transform=`translateX(${n*100}%)`;
   scrollTo(0,0);
-  document.documentElement.classList.toggle('nos',n===2);
   fitSankey();
 });
-document.addEventListener('touchmove',e=>{if(tab===2&&!e.target.closest('.ov'))e.preventDefault()},{passive:false});
 
 // modal
 function buildTypes(){
