@@ -141,7 +141,11 @@ nav span{font-size:10px;font-weight:600;line-height:1}
 .sr.inc span:last-child{font-size:16px}
 .srs{display:inline-block}
 .sdiv{text-align:left}
-.sp .mo{position:static}
+.sp .mo{position:static;font-size:14px}
+.emp{display:none;font-size:14px;color:var(--mute)}
+.sk.empty{display:flex;align-items:center;justify-content:center;padding-top:0}
+.sk.empty svg{display:none}
+.sk.empty .emp{display:block}
 .sdiv{margin:20px 0 0}
 .sp b{display:block;margin-top:0;font-size:24px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .sp .dl{margin-top:8px;line-height:1.6}
@@ -165,7 +169,7 @@ nav span{font-size:10px;font-weight:600;line-height:1}
   <div class="card chart-card sp">
     <div class="mo"><button id="imp" aria-label="이전 달"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><span id="imlabel"></span><button id="imn" aria-label="다음 달"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button></div>
     <div class="sdiv" id="idelta"></div>
-    <div class="sk"><svg id="isvg" viewBox="0 0 360 1"></svg></div>
+    <div class="sk" id="sk"><svg id="isvg" viewBox="0 0 360 1"></svg><div class="emp" id="iemp">데이터가 없습니다</div></div>
   </div>
 </div>
 </main>
@@ -374,6 +378,9 @@ function sankey(svg,ins,outs,I,E){
 }
 function fitSankey(){
   if(tab!==1)return;
+  const sk=$('#sk'),lim0=document.querySelector('.dock').getBoundingClientRect().top-10;
+  if(sk.classList.contains('empty')){sk.style.height='';sk.style.height=Math.max(80,lim0-sk.getBoundingClientRect().top)+'px';return}
+  sk.style.height='';
   const svg=$('#isvg'),vb=svg.viewBox.baseVal;
   if(!vb||vb.height<=1){svg.style.height='';return}
   const nat=svg.clientWidth*vb.height/vb.width;
@@ -391,6 +398,7 @@ function renderIncome(){
   {const bal=I-E,w=n=>(n<0?'-':'')+'₩'+fmt(Math.abs(n));
   $('#idelta').innerHTML=`<div class="srs"><div class="sr inc"><i class="dt" style="background:var(--c-in)"></i><span>소득</span><span>${w(I)}</span></div><div class="sr"><i class="dt" style="background:var(--c-out)"></i><span>지출</span><span>${w(E)}</span></div><div class="sr"><i class="dt" style="background:var(--mute)"></i><span>잔액</span><span>${w(bal)}</span></div></div>`;}
   $('#imlabel').textContent=`${Math.floor(M/12)}년 ${M%12+1}월`;
+  $('#sk').classList.toggle('empty',!(I||E));
   sankey($('#isvg'),ins,outs,I,E);fitSankey();
 }
 $('#mp').onclick=()=>{mo=Math.max(mo-1,-12);hideTip();render()};
