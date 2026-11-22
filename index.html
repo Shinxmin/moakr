@@ -493,7 +493,7 @@ function renderIncome(){
   $('#cmlabel').textContent=`${Math.floor(M/12)}년 ${M%12+1}월`;
   {
     const rk=keyOf(baseM());
-    const as=items.filter(x=>(x.month||rk)===key).map(x=>snapAt(x,key)||x).sort((a,b)=>krw(b)-krw(a));
+    const as=itemsAt(imo).sort((a,b)=>krw(b)-krw(a));
     const rows=[...as.map(x=>`<div class="row" data-aid="${x.id}">${rowHtml(x)}</div>`),...[...ins,...outs].map(x=>`<div class="row" data-fid="${x.fid}">${rowHtml(x)}</div>`)];
     $('#clist').innerHTML=rows.length?rows.join(''):'<div class="cemp">데이터가 없습니다</div>';
   }
