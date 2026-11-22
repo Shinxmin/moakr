@@ -130,12 +130,12 @@ nav span{font-size:10px;font-weight:600;line-height:1}
 .ib.dl2{color:#f04452}
 .secf{margin-bottom:0}
 .sp{text-align:center}
-.sr{display:flex;gap:14px;text-align:left;font-size:14px;line-height:2;font-variant-numeric:tabular-nums}
-.sr span:first-child{width:36px;flex:none;color:var(--mute)}
-.sr.bal{font-weight:700;color:var(--fg)}
-.sr.bal span:first-child{color:var(--fg)}
+.sr{display:flex;gap:14px;text-align:left;font-size:14px;line-height:2;font-weight:400;color:var(--fg);font-variant-numeric:tabular-nums}
+.sr span:first-child{width:36px;flex:none}
+.sr.inc{font-size:16px;font-weight:700}
+.sr.calc{border-bottom:1px solid var(--fg);padding-bottom:6px;margin-bottom:6px}
 .sp .mo{position:static}
-.sdiv{margin-top:22px;padding-top:20px;border-top:1px solid var(--line)}
+.sdiv{margin:22px -16px 0;padding:20px 16px 0;border-top:1px solid var(--line)}
 .sp b{display:block;margin-top:0;font-size:24px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .sp .dl{margin-top:8px;line-height:1.6}
 .sk{margin-top:18px}
@@ -353,12 +353,14 @@ function sankey(svg,ins,outs,I,E){
   const node=(nd,x,i,anchor,tx)=>{
     const cy=nd.y+nd.h/2;
     nodes+=`<rect class="sn" data-id="${nd.id}" x="${x}" y="${nd.y}" width="${BW}" height="${nd.h}" style="fill:${col(nd,i)}"/>`
-      +`<text x="${tx}" y="${cy-2}" text-anchor="${anchor}" style="font-size:12px;font-weight:600;fill:var(--fg)">${esc(cut(nd.name))}</text>`
-      +`<text x="${tx}" y="${cy+12}" text-anchor="${anchor}" style="font-size:11px;fill:var(--mute)">₩${fmt(nd.amount)}</text>`;
+      +`<text class="sn" data-id="${nd.id}" x="${tx}" y="${cy-2}" text-anchor="${anchor}" style="font-size:12px;font-weight:600;fill:var(--fg)">${esc(cut(nd.name))}</text>`
+      +`<text class="sn" data-id="${nd.id}" x="${tx}" y="${cy+12}" text-anchor="${anchor}" style="font-size:11px;fill:var(--mute)">₩${fmt(nd.amount)}</text>`
+      +`<rect class="sn" data-id="${nd.id}" x="${x-10}" y="${nd.y-4}" width="${BW+20}" height="${nd.h+8}" style="fill:transparent"/>`;
   };
   L.forEach((nd,i)=>node(nd,XL,i,'end',XL-8));
   R.forEach((nd,i)=>node(nd,XR,i,'start',XR+BW+8));
-  nodes+=`<rect class="sn" data-id="inc" x="${XM}" y="${M.y}" width="${BW}" height="${M.h}" style="fill:${col(M,0)}"/>`;
+  nodes+=`<rect class="sn" data-id="inc" x="${XM}" y="${M.y}" width="${BW}" height="${M.h}" style="fill:${col(M,0)}"/>`
+    +`<rect class="sn" data-id="inc" x="${XM-12}" y="${M.y}" width="${BW+24}" height="${M.h}" style="fill:transparent"/>`;
   svg.setAttribute('viewBox',`0 0 360 ${H+PAD+10}`);
   svg.innerHTML=links+nodes;
 }
@@ -370,7 +372,7 @@ function renderIncome(){
   const I=ins.reduce((s,x)=>s+x.amount,0),E=outs.reduce((s,x)=>s+x.amount,0);
   poolI=[{id:'inc',type:'in',name:'소득 합계',amount:I},...ins,...outs,{id:'rest',type:'rest',name:'잔액',amount:I-E},{id:'def',type:'rest',name:'부족',amount:E-I}];
   {const bal=I-E,w=n=>(n<0?'-':'')+'₩'+fmt(Math.abs(n));
-  $('#idelta').innerHTML=`<div class="sr"><span>소득</span><span>${w(I)}</span></div><div class="sr"><span>지출</span><span>${w(E)}</span></div><div class="sr bal"><span>잔액</span><span>${w(bal)}</span></div>`;}
+  $('#idelta').innerHTML=`<div class="sr inc"><span>소득</span><span>${w(I)}</span></div><div class="sr calc"><span>지출</span><span>${w(E)}</span></div><div class="sr"><span>잔액</span><span>${w(bal)}</span></div>`;}
   $('#imlabel').textContent=`${Math.floor(M/12)}년 ${M%12+1}월`;
   sankey($('#isvg'),ins,outs,I,E);
   $('#ilist').innerHTML=[...ins,...outs].map(i=>`<div class="row${i.type==='out'?' ex':''}" data-fid="${i.fid}">${rowHtml(i)}</div>`).join('');
