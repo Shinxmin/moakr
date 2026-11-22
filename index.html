@@ -348,13 +348,13 @@ function sankey(svg,ins,outs,I,E){
   const cut=s=>s.length>5?s.slice(0,4)+'…':s;
   const node=(nd,x,i,anchor,tx)=>{
     const cy=nd.y+nd.h/2;
-    nodes+=`<rect class="sn" data-id="${nd.id}" x="${x}" y="${nd.y}" width="${BW}" height="${nd.h}" rx="3" style="fill:${col(nd,i)}"/>`
+    nodes+=`<rect class="sn" data-id="${nd.id}" x="${x}" y="${nd.y}" width="${BW}" height="${nd.h}" style="fill:${col(nd,i)}"/>`
       +`<text x="${tx}" y="${cy-2}" text-anchor="${anchor}" style="font-size:12px;font-weight:600;fill:var(--fg)">${esc(cut(nd.name))}</text>`
       +`<text x="${tx}" y="${cy+12}" text-anchor="${anchor}" style="font-size:11px;fill:var(--mute)">₩${fmt(nd.amount)}</text>`;
   };
   L.forEach((nd,i)=>node(nd,XL,i,'end',XL-8));
   R.forEach((nd,i)=>node(nd,XR,i,'start',XR+BW+8));
-  nodes+=`<rect class="sn" data-id="inc" x="${XM}" y="${M.y}" width="${BW}" height="${M.h}" rx="3" style="fill:${col(M,0)}"/>`
+  nodes+=`<rect class="sn" data-id="inc" x="${XM}" y="${M.y}" width="${BW}" height="${M.h}" style="fill:${col(M,0)}"/>`
     +`<text x="${XM+BW/2}" y="${M.y-16}" text-anchor="middle" style="font-size:12px;font-weight:600;fill:var(--fg)">수입</text>`
     +`<text x="${XM+BW/2}" y="${M.y-3}" text-anchor="middle" style="font-size:11px;fill:var(--mute)">₩${fmt(I)}</text>`;
   svg.setAttribute('viewBox',`0 0 360 ${H+PAD+10}`);
