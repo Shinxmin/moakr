@@ -131,9 +131,10 @@ nav span{font-size:10px;font-weight:600;line-height:1}
 .secf{margin-bottom:0}
 .sp{text-align:center}
 .sp .mo{position:static}
-.sp b{display:block;margin-top:12px;font-size:24px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.sdiv{margin-top:22px;padding-top:20px;border-top:1px solid var(--line)}
+.sp b{display:block;margin-top:0;font-size:24px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .sp .dl{margin-top:8px;line-height:1.6}
-.sk{margin-top:22px}
+.sk{margin-top:18px}
 .sk svg{width:100%;display:block;overflow:visible;touch-action:pan-y}
 .sn{cursor:pointer}
 .t-rest{--pc:var(--mute)}
@@ -153,9 +154,8 @@ nav span{font-size:10px;font-weight:600;line-height:1}
 <div class="view" id="v-1">
   <div class="card chart-card sp">
     <div class="mo"><button id="imp" aria-label="이전 달"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><span id="imlabel"></span><button id="imn" aria-label="다음 달"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button></div>
-    <b id="itotal">₩0</b>
-    <div class="dl" id="idelta"></div>
     <div class="sk"><svg id="isvg" viewBox="0 0 360 1"></svg></div>
+    <div class="sdiv"><b id="itotal">₩0</b><div class="dl" id="idelta"></div></div>
   </div>
   <div class="card list" id="ilist"></div>
 </div>
