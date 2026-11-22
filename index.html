@@ -9,12 +9,12 @@
   --bg:#fff;--card:#fff;--fg:#191f28;--sub:#4e5968;--mute:#8b95a1;--line:#e5e8eb;--field:#f2f4f6;--primary:#3182f6;
   --glass:rgba(255,255,255,.72);--glass-b:rgba(255,255,255,.6);--shadow:0 8px 32px rgba(0,0,0,.14);
   --r:16px;--ico:38px;
-  --c-cash:#3182f6;--c-fx:#f59f00;--c-save:#00b386;
+  --c-cash:#3182f6;--c-fx:#f59f00;--c-save:#00b386;--c-in:#8b5cf6;--c-out:#f04452;
 }
 @media (prefers-color-scheme:dark){
   :root{--bg:#17171c;--card:#17171c;--fg:#f9fafb;--sub:#c3c8d1;--mute:#8b95a1;--line:#2c2c35;--field:#2c2c35;--primary:#4593fc;
   --glass:rgba(40,40,48,.7);--glass-b:rgba(255,255,255,.08);--shadow:0 8px 32px rgba(0,0,0,.5);
-  --c-cash:#4593fc;--c-fx:#ffb724;--c-save:#1fc99b}
+  --c-cash:#4593fc;--c-fx:#ffb724;--c-save:#1fc99b;--c-in:#a78bfa;--c-out:#ff6b78}
   header{background:rgba(23,23,28,.55)}
   nav{background:linear-gradient(145deg,rgba(255,255,255,.16),rgba(255,255,255,.06))!important;border-color:rgba(255,255,255,.16)!important;box-shadow:inset 0 1px 1px rgba(255,255,255,.25),0 8px 28px rgba(0,0,0,.5)!important}
   nav .ind{background:rgba(255,255,255,.12)!important}
@@ -29,7 +29,7 @@ h1{cursor:text;padding:3px 0;outline:none;min-width:24px;font-size:17px;line-hei
 .add svg{display:block;width:16px;height:16px}
 .add:active{transform:scale(.92)}
 .ava{width:var(--ico);min-width:var(--ico);height:var(--ico);border-radius:50%;background:color-mix(in srgb,var(--mute) 22%,var(--bg));color:var(--mute);display:flex;align-items:flex-end;justify-content:center;overflow:hidden;flex:none}
-.ava svg{width:56px;height:56px;flex:none;display:block;margin-bottom:-11px}
+.ava svg{width:50px;height:50px;flex:none;display:block;margin-bottom:-6px}
 main{max-width:520px;margin:0 auto;padding:calc(68px + env(safe-area-inset-top)) 16px calc(132px + env(safe-area-inset-bottom))}
 .card{background:var(--card);border-radius:var(--r)}
 .chart-card{padding:20px 16px 28px;margin-bottom:0}
@@ -39,7 +39,17 @@ main{max-width:520px;margin:0 auto;padding:calc(68px + env(safe-area-inset-top))
 .seg.on{stroke-width:25}
 .dim .seg:not(.on){opacity:.3}
 .ring-empty{fill:none;stroke:var(--line);stroke-width:20}
-.center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;pointer-events:none}
+.mo{display:flex;align-items:center;gap:2px;font-size:13px;font-weight:600;color:var(--sub);pointer-events:auto}
+.mo span{min-width:44px;text-align:center}
+.mo button{width:26px;height:26px;border:0;padding:0;border-radius:50%;background:transparent;color:var(--mute);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.mo button:active{background:var(--field)}
+.mo svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.seg.dash{stroke-dasharray:4 3}
+.t-in{--pc:var(--c-in)}.t-out{--pc:var(--c-out)}
+.row.flow{cursor:default}
+.row.ex{outline:1px dashed var(--line);outline-offset:-1px}
+.row.ex .pill{background:transparent;color:var(--pc);box-shadow:inset 0 0 0 1px var(--pc)}
 .center b{font-size:19px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .pill{display:inline-block;flex:none;min-width:40px;text-align:center;font-size:10px;line-height:1;padding:4px 7px;border-radius:999px;font-weight:600;color:#fff;background:var(--pc)}
 .t-cash{--pc:var(--c-cash)}.t-fx{--pc:var(--c-fx)}.t-save{--pc:var(--c-save)}
@@ -107,7 +117,7 @@ nav span{font-size:10px;font-weight:600;line-height:1}
 <div class="view on" id="v-0">
   <div class="card chart-card"><div class="chart" id="chart">
     <svg viewBox="0 0 200 200" id="svg"></svg>
-    <div class="center"><b id="total">₩0</b></div>
+    <div class="center"><div class="mo"><button id="mp" aria-label="이전 달"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><span id="mlabel"></span><button id="mn" aria-label="다음 달"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button></div><b id="total">₩0</b></div>
   </div></div>
   <div class="card list" id="list"></div>
 </div>
@@ -137,25 +147,28 @@ nav span{font-size:10px;font-weight:600;line-height:1}
 <script>
 const TYPES={cash:'입출금',fx:'외화',save:'예적금'};
 const CURS={USD:'$',JPY:'¥',CNY:'CN¥'};
-const COLORS={cash:'--c-cash',fx:'--c-fx',save:'--c-save'};
+const COLORS={cash:'--c-cash',fx:'--c-fx',save:'--c-save',in:'--c-in',out:'--c-out'};
+const LBL={cash:'입출금',fx:'외화',save:'예적금',in:'수입',out:'지출'};
 const $=s=>document.querySelector(s);
 const ls={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
 let items=ls.get('assets',[]);
+let flows=ls.get('flows',[]); // {id,kind:'in'|'out',name,amount,month:'YYYY-MM',monthly?}
+let mo=0;
 let rates=ls.get('rates',{USD:0,JPY:0,CNY:0}); // KRW per 1 unit
 let editId=null,curType='cash';
 const fmt=(n,d=0)=>n.toLocaleString('ko-KR',{minimumFractionDigits:d,maximumFractionDigits:d});
 const krw=i=>i.type==='fx'?i.amount*(rates[i.cur]||0):i.amount;
 const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const main=i=>i.type==='fx'?CURS[i.cur]+fmt(i.amount,i.cur==='JPY'?0:2):'₩'+fmt(i.amount);
+const main=i=>i.type==='out'?'-₩'+fmt(i.amount):i.type==='fx'?CURS[i.cur]+fmt(i.amount,i.cur==='JPY'?0:2):'₩'+fmt(i.amount);
 const sub=i=>i.type==='fx'&&rates[i.cur]?'₩'+fmt(Math.round(krw(i))):'';
-const pill=t=>`<span class="pill t-${t}">${TYPES[t]}</span>`;
+const pill=t=>`<span class="pill t-${t}">${LBL[t]}</span>`;
 
 // colors: per-type hue, varying lightness per account
 function shade(i,idx){
   const base=css(COLORS[i.type]);
   const same=items.filter(x=>x.type===i.type);
-  const k=same.indexOf(i);
+  const k=Math.max(0,same.indexOf(i));
   return `color-mix(in srgb, ${base} ${Math.max(45,100-k*14)}%, ${css('--bg')})`;
 }
 
@@ -165,30 +178,53 @@ function arc(a0,a1,r){
   return `M${x0} ${y0}A${r} ${r} 0 ${a1-a0>Math.PI?1:0} 1 ${x1} ${y1}`;
 }
 
+const baseM=()=>{const n=new Date();return n.getFullYear()*12+n.getMonth()};
+function viewFlows(){
+  if(mo<=0)return [];
+  const b=baseM(),M=b+mo,out=[];
+  flows.forEach(f=>{
+    const [y,m]=String(f.month).split('-').map(Number);if(!y||!m)return;
+    const st=y*12+m-1;
+    const n=f.monthly?Math.max(0,M-Math.max(st,b+1)+1):(st>b&&st<=M?1:0);
+    if(n>0)out.push({id:'f:'+f.id,type:f.kind,name:f.name,amount:f.amount*n,flow:true});
+  });
+  return out;
+}
+function monthLabel(){
+  const M=baseM()+mo,y=Math.floor(M/12),m=M%12+1;
+  return y===new Date().getFullYear()?`${m}월`:`${y}.${m}월`;
+}
 function render(){
-  const total=items.reduce((s,i)=>s+krw(i),0);
-  $('#total').textContent='₩'+fmt(Math.round(total));
+  const fl=viewFlows(),all=[...items,...fl];
+  const net=items.reduce((s,i)=>s+krw(i),0)+fl.reduce((s,f)=>s+(f.type==='in'?f.amount:-f.amount),0);
+  const gross=all.reduce((s,i)=>s+krw(i),0);
+  $('#total').textContent=(net<0?'-':'')+'₩'+fmt(Math.abs(Math.round(net)));
+  $('#mlabel').textContent=monthLabel();
   const svg=$('#svg');
   let h='<circle class="ring-empty" cx="100" cy="100" r="78"/>';
-  if(total>0){
-    let a=0;const gap=items.length>1?0.025:0;
-    items.forEach(i=>{
+  if(gross>0){
+    let a=0;const gap=all.length>1?0.025:0;
+    all.forEach(i=>{
       const v=krw(i);if(v<=0)return;
-      const span=v/total*Math.PI*2;
+      const span=v/gross*Math.PI*2;
       const s=a+gap/2,e=Math.min(a+span-gap/2,a+Math.PI*2-0.0001);
-      h+=`<path class="seg" data-id="${i.id}" d="${arc(s,Math.max(e,s+0.001),78)}" stroke="${shade(i)}"/>`;
+      h+=`<path class="seg${i.type==='out'?' dash':''}" data-id="${i.id}" d="${arc(s,Math.max(e,s+0.001),78)}" stroke="${shade(i)}"/>`;
       a+=span;
     });
   }
   svg.innerHTML=h;
-  $('#list').innerHTML=items.map(i=>`<div class="row" data-id="${i.id}">${pill(i.type)}<span class="nm">${esc(i.name)}</span>
-    <div class="r"><b>${main(i)}</b>${sub(i)?`<small>${sub(i)}</small>`:''}</div></div>`).join('');
+  const row=i=>`${pill(i.type)}<span class="nm">${esc(i.name)}</span>
+    <div class="r"><b>${main(i)}</b>${sub(i)?`<small>${sub(i)}</small>`:''}</div>`;
+  $('#list').innerHTML=items.map(i=>`<div class="row" data-id="${i.id}">${row(i)}</div>`).join('')
+    +fl.map(f=>`<div class="row flow${f.type==='out'?' ex':''}">${row(f)}</div>`).join('');
 }
+$('#mp').onclick=()=>{mo=Math.max(mo-1,-12);hideTip();render()};
+$('#mn').onclick=()=>{mo=Math.min(mo+1,60);hideTip();render()};
 
 // tooltip
 const tip=$('#tip');
 function showTip(id,x,y){
-  const i=items.find(v=>v.id===id);if(!i)return;
+  const i=[...items,...viewFlows()].find(v=>v.id===id);if(!i)return;
   tip.innerHTML=`<div class="h">${pill(i.type)}<span class="n">${esc(i.name)}</span></div><div class="a">${main(i)}${sub(i)?`<span class="k">${sub(i)}</span>`:''}</div>`;
   tip.classList.add('show');
   const w=tip.offsetWidth,hh=tip.offsetHeight;
@@ -295,10 +331,10 @@ function save(){ls.set('assets',items);render();push()}
 // tap = edit, long press = drag to reorder
 const list=$('#list');
 let pt=null,st=null,dr=null;
-const rows=()=>[...list.querySelectorAll('.row')];
+const rows=()=>[...list.querySelectorAll('.row[data-id]')];
 function endPress(){clearTimeout(pt);document.querySelectorAll('.row.press').forEach(r=>r.classList.remove('press'))}
 list.addEventListener('pointerdown',e=>{
-  const row=e.target.closest('.row');if(!row||dr)return;
+  const row=e.target.closest('.row[data-id]');if(!row||dr)return;
   st={row,id:row.dataset.id,x:e.clientX,y:e.clientY};
   row.classList.add('press');
   pt=setTimeout(startDrag,420);
@@ -360,13 +396,14 @@ async function loadRates(){
 const SB='https://xbfbksavomeevaxghbsn.supabase.co',SKEY='sb_publishable_M0eH-Owaq7kzPJuAdGn_dQ_iKdXvEc2',SK='40520451549947cc8d15b7cc51192e3e7927712bd6ce43eeb016f6532af275f2';
 const rpc=(fn,body)=>fetch(`${SB}/rest/v1/rpc/${fn}`,{method:'POST',headers:{apikey:SKEY,'Content-Type':'application/json'},body:JSON.stringify(body)}).then(r=>r.ok?r.json():Promise.reject());
 let pushT=null;
-function push(){clearTimeout(pushT);pushT=setTimeout(()=>{pushT=null;rpc('moakr_set',{k:SK,d:{items,name:ls.get('name','사용자')}}).catch(()=>{})},400)}
+function push(){clearTimeout(pushT);pushT=setTimeout(()=>{pushT=null;rpc('moakr_set',{k:SK,d:{items,flows,name:ls.get('name','사용자')}}).catch(()=>{})},400)}
 async function pull(){
   try{
     const d=await rpc('moakr_get',{k:SK});
     if(pushT||dr||$('#ov').classList.contains('open')||nmEl.isContentEditable)return;
     if(d&&Array.isArray(d.items)){
       if(JSON.stringify(d.items)!==JSON.stringify(items)){items=d.items;ls.set('assets',items);render()}
+      if(Array.isArray(d.flows)&&JSON.stringify(d.flows)!==JSON.stringify(flows)){flows=d.flows;ls.set('flows',flows);render()}
       if(d.name&&d.name!==ls.get('name','사용자')){ls.set('name',d.name);nmEl.textContent=d.name}
     }else push();
   }catch{}
