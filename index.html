@@ -183,7 +183,6 @@ nav span{font-size:10px;font-weight:600;line-height:1}
   <div class="seg-t" id="ktypes"><button type="button" data-k="in" class="on">소득</button><button type="button" data-k="out">지출</button></div>
   <label class="f"><input id="iname" placeholder="내역명" required maxlength="30"></label>
   <label class="f"><input id="iamt" placeholder="금액" inputmode="numeric" required></label>
-  <label class="f"><select id="iacct" required></select></label>
   <div class="btns">
     <button type="button" class="del hide" id="idel">삭제</button>
     <button type="button" id="icancel">취소</button>
@@ -521,10 +520,6 @@ function openFlow(id){
   $('#imt').textContent=f?'내역 수정':'내역 추가';
   $('#iname').value=f?f.name:'';
   $('#iamt').value=f?fmtAmt(String(f.amount),false):'';
-  const sel=$('#iacct');
-  const ac=items.filter(i=>i.type!=='sec');
-  sel.innerHTML=ac.length?ac.map(i=>`<option value="${i.id}">${esc(i.name)}</option>`).join(''):'<option value="">계좌 없음</option>';
-  if(f&&items.some(i=>i.id===f.acct))sel.value=f.acct;
   $('#idel').classList.toggle('hide',!f);
   $('#ov2').classList.add('open');setTimeout(()=>$('#iname').focus(),50);
 }
@@ -533,10 +528,10 @@ $('#ov2').addEventListener('pointerdown',e=>{if(e.target.id==='ov2')closeModal()
 $('#idel').onclick=()=>{flows=flows.filter(v=>v.id!==iEdit);saveFlows();closeModal()};
 $('#iform').onsubmit=e=>{
   e.preventDefault();
-  const amount=parseInt($('#iamt').value.replace(/,/g,''),10),name=$('#iname').value.trim(),acct=$('#iacct').value;
-  if(!name||isNaN(amount)||amount<=0||!acct)return;
-  if(iEdit)flows=flows.map(v=>v.id===iEdit?{...v,name,amount,acct,kind:fKind}:v);
-  else flows.push({id:String(Date.now()),kind:fKind,name,amount,acct,month:keyOf(baseM()+imo)});
+  const amount=parseInt($('#iamt').value.replace(/,/g,''),10),name=$('#iname').value.trim();
+  if(!name||isNaN(amount)||amount<=0)return;
+  if(iEdit)flows=flows.map(v=>v.id===iEdit?{...v,name,amount,kind:fKind}:v);
+  else flows.push({id:String(Date.now()),kind:fKind,name,amount,month:keyOf(baseM()+imo)});
   saveFlows();closeModal();
 };
 function saveFlows(){ls.set('flows',flows);render();push()}
