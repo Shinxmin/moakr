@@ -138,10 +138,10 @@ nav span{font-size:10px;font-weight:600;line-height:1}
 .srs{display:inline-block}
 .sdiv{text-align:left}
 .sp .mo{position:static}
-.sdiv{margin:22px -16px 0;padding:20px 16px 0;border-top:1px solid var(--line)}
+.sdiv{margin:20px 0 0}
 .sp b{display:block;margin-top:0;font-size:24px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .sp .dl{margin-top:8px;line-height:1.6}
-.sk{margin-top:18px}
+.sk{margin:24px -16px 0;padding:24px 16px 0;border-top:1px solid var(--line)}
 .sk svg{width:100%;display:block;overflow:visible;touch-action:pan-y}
 .sn{cursor:pointer}
 .t-rest{--pc:var(--mute)}
@@ -161,10 +161,9 @@ nav span{font-size:10px;font-weight:600;line-height:1}
 <div class="view" id="v-1">
   <div class="card chart-card sp">
     <div class="mo"><button id="imp" aria-label="이전 달"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><span id="imlabel"></span><button id="imn" aria-label="다음 달"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button></div>
-    <div class="sk"><svg id="isvg" viewBox="0 0 360 1"></svg></div>
     <div class="sdiv" id="idelta"></div>
+    <div class="sk"><svg id="isvg" viewBox="0 0 360 1"></svg></div>
   </div>
-  <div class="card list" id="ilist"></div>
 </div>
 </main>
 <div class="dock"><nav id="nav"><i class="ind" id="ind"></i>
@@ -308,6 +307,11 @@ function build(m){
   const net=vi.reduce((s,i)=>s+krw(i),0)+orphan.reduce((s,i)=>s+i.amount,0)-orphanOut;
   return {vi,orphan,exp,net};
 }
+function monthFlows(){
+  const key=keyOf(baseM()+mo),nm=id=>(items.find(i=>i.id===id)||{}).name||'';
+  const mk=k=>flows.filter(f=>f.kind===k&&f.month===key).map(f=>({id:'f:'+f.id,fid:f.id,type:k,name:f.name,amount:f.amount,note:nm(f.acct)}));
+  return [...mk('in'),...mk('out')];
+}
 function render(keep=false){
   const {vi,orphan,exp,net}=build(mo);
   $('#total').textContent=(net<0?'-':'')+'₩'+fmt(Math.abs(Math.round(net)));
@@ -328,7 +332,7 @@ function render(keep=false){
       row.querySelector('.nm').textContent=i.name;row.querySelector('.r').innerHTML=`<b>${main(i)}</b>${sub(i)?`<small>${esc(sub(i))}</small>`:''}`});
   }else
   $('#list').innerHTML=vi.map(i=>`<div class="row${i.id===openId?' open':''}" data-id="${i.id}">${rowHtml(i)}${i.id===openId?detailHtml(items.find(x=>x.id===i.id)||i):''}</div>`).join('')
-    +[...orphan,...exp].map(f=>`<div class="row flow${f.type==='out'?' ex':''}">${rowHtml(f)}</div>`).join('');
+    +monthFlows().map(f=>`<div class="row${f.type==='out'?' ex':''}" data-fid="${f.fid}">${rowHtml(f)}</div>`).join('');
   renderIncome();
 }
 let imo=0;
@@ -378,7 +382,6 @@ function renderIncome(){
   $('#idelta').innerHTML=`<div class="srs"><div class="sr inc"><i class="dt" style="background:var(--c-in)"></i><span>소득</span><span>${w(I)}</span></div><div class="sr"><i class="dt" style="background:var(--c-out)"></i><span>지출</span><span>${w(E)}</span></div><div class="sr"><i class="dt" style="background:var(--mute)"></i><span>잔액</span><span>${w(bal)}</span></div></div>`;}
   $('#imlabel').textContent=`${Math.floor(M/12)}년 ${M%12+1}월`;
   sankey($('#isvg'),ins,outs,I,E);
-  $('#ilist').innerHTML=[...ins,...outs].map(i=>`<div class="row${i.type==='out'?' ex':''}" data-fid="${i.fid}">${rowHtml(i)}</div>`).join('');
 }
 $('#mp').onclick=()=>{mo=Math.max(mo-1,-12);hideTip();render()};
 $('#mn').onclick=()=>{mo=Math.min(mo+1,60);hideTip();render()};
@@ -512,7 +515,6 @@ $('#iform').onsubmit=e=>{
   saveFlows();closeModal();
 };
 function saveFlows(){ls.set('flows',flows);render();push()}
-$('#ilist').addEventListener('click',e=>{const row=e.target.closest('.row[data-fid]');if(row)openFlow(row.dataset.fid)});
 $('#cancel').onclick=closeModal;
 $('#ov').addEventListener('pointerdown',e=>{if(e.target.id==='ov')closeModal()});
 $('#del').onclick=()=>{items=items.filter(v=>v.id!==editId);save();closeModal()};
@@ -537,6 +539,7 @@ function save(){ls.set('assets',items);render();push()}
 // inline detail editing
 const list=$('#list');
 list.addEventListener('click',e=>{
+  const fr=e.target.closest('.row[data-fid]');if(fr){openFlow(fr.dataset.fid);return}
   const b=e.target.closest('[data-act]');if(!b)return;
   const row=b.closest('.row[data-id]'),id=row.dataset.id;
   if(b.dataset.act==='del'){
