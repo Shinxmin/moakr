@@ -331,30 +331,33 @@ function sankey(svg,ins,outs,I,E){
   const L=ins.map(x=>({...x})),R=outs.map(x=>({...x}));
   if(E>I)L.push({id:'def',type:'rest',name:'부족',amount:E-I});
   if(I>E)R.push({id:'rest',type:'rest',name:'잔액',amount:I-E});
-  const GAP=14,MINH=26,n=Math.max(L.length,R.length),H=Math.max(220,n*64);
+  const GAP=14,MINH=26,PAD=26,n=Math.max(L.length,R.length),H=Math.max(220,n*64);
   const colH=(c,k)=>c.reduce((s,x)=>s+Math.max(x.amount*k,MINH),0)+GAP*(c.length-1);
   let k=(H-GAP*(n-1))/T;
   for(let t=0;t<40&&Math.max(colH(L,k),colH(R,k))>H;t++)k*=.94;
-  const place=c=>{let y=(H-colH(c,k))/2;c.forEach(x=>{x.h=Math.max(x.amount*k,MINH);x.y=y;y+=x.h+GAP})};
+  const place=c=>{let y=PAD+(H-colH(c,k))/2;c.forEach(x=>{x.h=Math.max(x.amount*k,MINH);x.y=y;y+=x.h+GAP})};
   place(L);place(R);
+  const mh=Math.max(T*k,MINH),M={id:'inc',type:'in',name:'수입',amount:I,y:PAD+(H-mh)/2,h:mh};
   const col=(x,i)=>x.type==='in'?`color-mix(in srgb,var(--c-in) ${Math.max(50,100-i*12)}%,var(--bg))`:x.type==='out'?`color-mix(in srgb,var(--c-out) ${Math.max(50,100-i*12)}%,var(--bg))`:'var(--mute)';
-  const XL=100,XR=252,BW=8,XM=(XL+BW+XR)/2;
-  let links='',nodes='';
-  L.forEach(l=>l.o=0);R.forEach(r=>r.o=0);
-  L.forEach((l,li)=>R.forEach(r=>{
-    const f=l.amount*r.amount/T,lh=f/l.amount*l.h,rh=f/r.amount*r.h;
-    const y0=l.y+l.o,y1=y0+lh,z0=r.y+r.o,z1=z0+rh;l.o+=lh;r.o+=rh;
-    links+=`<path d="M${XL+BW} ${y0}C${XM} ${y0} ${XM} ${z0} ${XR} ${z0}L${XR} ${z1}C${XM} ${z1} ${XM} ${y1} ${XL+BW} ${y1}Z" style="fill:${col(l,li)};opacity:.22"/>`;
-  }));
-  const cut=s=>s.length>7?s.slice(0,6)+'…':s;
-  const draw=(c,x,anchor,tx)=>c.forEach((nd,i)=>{
+  const XL=64,XM=176,XR=282,BW=8;
+  const rib=(x0,y0,y1,x1,z0,z1,c)=>{const m=(x0+x1)/2;return `<path d="M${x0} ${y0}C${m} ${y0} ${m} ${z0} ${x1} ${z0}L${x1} ${z1}C${m} ${z1} ${m} ${y1} ${x0} ${y1}Z" style="fill:${c};opacity:.22"/>`};
+  let links='',nodes='',mo=0;
+  L.forEach((l,i)=>{const z0=M.y+mo,z1=z0+l.amount/T*M.h;mo+=l.amount/T*M.h;links+=rib(XL+BW,l.y,l.y+l.h,XM,z0,z1,col(l,i))});
+  let mo2=0;
+  R.forEach((r,i)=>{const y0=M.y+mo2,y1=y0+r.amount/T*M.h;mo2+=r.amount/T*M.h;links+=rib(XM+BW,y0,y1,XR,r.y,r.y+r.h,col(r,i))});
+  const cut=s=>s.length>5?s.slice(0,4)+'…':s;
+  const node=(nd,x,i,anchor,tx)=>{
     const cy=nd.y+nd.h/2;
     nodes+=`<rect class="sn" data-id="${nd.id}" x="${x}" y="${nd.y}" width="${BW}" height="${nd.h}" rx="3" style="fill:${col(nd,i)}"/>`
       +`<text x="${tx}" y="${cy-2}" text-anchor="${anchor}" style="font-size:12px;font-weight:600;fill:var(--fg)">${esc(cut(nd.name))}</text>`
       +`<text x="${tx}" y="${cy+12}" text-anchor="${anchor}" style="font-size:11px;fill:var(--mute)">₩${fmt(nd.amount)}</text>`;
-  });
-  draw(L,XL,'end',XL-8);draw(R,XR,'start',XR+BW+8);
-  svg.setAttribute('viewBox',`0 0 360 ${H}`);
+  };
+  L.forEach((nd,i)=>node(nd,XL,i,'end',XL-8));
+  R.forEach((nd,i)=>node(nd,XR,i,'start',XR+BW+8));
+  nodes+=`<rect class="sn" data-id="inc" x="${XM}" y="${M.y}" width="${BW}" height="${M.h}" rx="3" style="fill:${col(M,0)}"/>`
+    +`<text x="${XM+BW/2}" y="${M.y-16}" text-anchor="middle" style="font-size:12px;font-weight:600;fill:var(--fg)">수입</text>`
+    +`<text x="${XM+BW/2}" y="${M.y-3}" text-anchor="middle" style="font-size:11px;fill:var(--mute)">₩${fmt(I)}</text>`;
+  svg.setAttribute('viewBox',`0 0 360 ${H+PAD+10}`);
   svg.innerHTML=links+nodes;
 }
 function renderIncome(){
@@ -363,7 +366,7 @@ function renderIncome(){
   const mk=k=>flows.filter(f=>f.kind===k&&f.month===key).map(f=>({id:'f:'+f.id,fid:f.id,type:k,name:f.name,amount:f.amount,note:nm(f.acct)})).sort((a,b)=>b.amount-a.amount);
   const ins=mk('in'),outs=mk('out');
   const I=ins.reduce((s,x)=>s+x.amount,0),E=outs.reduce((s,x)=>s+x.amount,0);
-  poolI=[...ins,...outs,{id:'rest',type:'rest',name:'잔액',amount:I-E},{id:'def',type:'rest',name:'부족',amount:E-I}];
+  poolI=[{id:'inc',type:'in',name:'수입 합계',amount:I},...ins,...outs,{id:'rest',type:'rest',name:'잔액',amount:I-E},{id:'def',type:'rest',name:'부족',amount:E-I}];
   $('#itotal').textContent=(I-E<0?'-':'')+'₩'+fmt(Math.abs(I-E));
   $('#idelta').textContent=(I||E)?`수입 ₩${fmt(I)} · 지출 ₩${fmt(E)}`:'';
   $('#imlabel').textContent=`${Math.floor(M/12)}년 ${M%12+1}월`;
