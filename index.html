@@ -9,12 +9,12 @@
   --bg:#fff;--card:#fff;--fg:#191f28;--sub:#4e5968;--mute:#8b95a1;--line:#e5e8eb;--field:#f2f4f6;--primary:#3182f6;
   --glass:rgba(255,255,255,.72);--glass-b:rgba(255,255,255,.6);--shadow:0 8px 32px rgba(0,0,0,.14);
   --r:16px;--ico:38px;
-  --c-cash:#3182f6;--c-fx:#f59f00;--c-save:#00b386;--c-in:#8b5cf6;--c-out:#f04452;
+  --c-cash:#3182f6;--c-fx:#f59f00;--c-save:#00b386;--c-in:#8b5cf6;--c-out:#f04452;--c-sec:#ec4899;
 }
 @media (prefers-color-scheme:dark){
   :root{--bg:#17171c;--card:#17171c;--fg:#f9fafb;--sub:#c3c8d1;--mute:#8b95a1;--line:#2c2c35;--field:#2c2c35;--primary:#4593fc;
   --glass:rgba(40,40,48,.7);--glass-b:rgba(255,255,255,.08);--shadow:0 8px 32px rgba(0,0,0,.5);
-  --c-cash:#4593fc;--c-fx:#ffb724;--c-save:#1fc99b;--c-in:#a78bfa;--c-out:#ff6b78}
+  --c-cash:#4593fc;--c-fx:#ffb724;--c-save:#1fc99b;--c-in:#a78bfa;--c-out:#ff6b78;--c-sec:#f472b6}
   header{background:rgba(23,23,28,.55)}
   nav{background:linear-gradient(145deg,rgba(255,255,255,.16),rgba(255,255,255,.06))!important;border-color:rgba(255,255,255,.16)!important;box-shadow:inset 0 1px 1px rgba(255,255,255,.25),0 8px 28px rgba(0,0,0,.5)!important}
   nav .ind{background:rgba(255,255,255,.12)!important}
@@ -52,6 +52,7 @@ main{max-width:520px;margin:0 auto;padding:calc(68px + env(safe-area-inset-top))
 .mo button:active{background:var(--field)}
 .mo svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .seg.dash{stroke-dasharray:4 3}
+.t-sec{--pc:var(--c-sec)}
 .t-in{--pc:var(--c-in)}.t-out{--pc:var(--c-out)}
 .row.flow{cursor:default}
 .row.ex{outline:1px dashed var(--line);outline-offset:-1px}
@@ -115,6 +116,19 @@ nav button.on{color:var(--fg)}
 nav svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 nav span{font-size:10px;font-weight:600;line-height:1}
 .add.off{visibility:hidden;pointer-events:none}
+.row{flex-wrap:wrap}
+.detail{flex:0 0 100%;order:5;margin-top:12px;padding-top:6px;border-top:1px solid var(--line);animation:dx .22s ease}
+@keyframes dx{from{opacity:0;transform:translateY(-6px)}}
+.fl{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:3px 0;font-size:13px}
+.fl .k{color:var(--mute);flex:none;width:56px}
+.fl input,.fl select{width:auto;flex:1;min-width:0;text-align:right;text-align-last:right;padding:8px 10px;border:0;border-radius:10px;background:transparent;color:var(--fg);font:inherit;font-size:16px;font-weight:500;pointer-events:none;-webkit-appearance:none;appearance:none;opacity:1}
+.detail.edit .fl input,.detail.edit .fl select{pointer-events:auto;background:var(--field)}
+.da{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
+.ib{width:34px;height:34px;border:0;border-radius:50%;background:var(--field);color:var(--sub);display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
+.ib svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ib.on{background:var(--primary);color:#fff}
+.ib.dl2{color:#f04452}
+.secf{margin-bottom:0}
 </style>
 </head>
 <body>
@@ -158,9 +172,14 @@ nav span{font-size:10px;font-weight:600;line-height:1}
   <h2 id="mt">종목 추가</h2>
   <div class="seg-t" id="types"></div>
   <label class="f"><input id="name" placeholder="계좌명" required maxlength="30"></label>
-  <div class="amt">
+  <div class="amt" id="amtrow">
     <select id="cur" class="hide"></select>
-    <input id="amount" placeholder="금액" inputmode="decimal" required>
+    <input id="amount" placeholder="금액" inputmode="decimal">
+  </div>
+  <div class="secf hide" id="secf">
+    <label class="f"><input id="ticker" placeholder="종목" maxlength="30"></label>
+    <div class="amt f"><select id="scur"><option value="KRW">원</option><option value="USD">달러</option></select><input id="price" placeholder="평단가" inputmode="decimal"></div>
+    <label class="f"><input id="qty" placeholder="수량" inputmode="decimal"></label>
   </div>
   <div class="btns">
     <button type="button" class="del hide" id="del">삭제</button>
@@ -169,23 +188,25 @@ nav span{font-size:10px;font-weight:600;line-height:1}
   </div>
 </form></div>
 <script>
-const TYPES={cash:'입출금',fx:'외화',save:'예적금'};
+const TYPES={cash:'입출금',fx:'외화',save:'예적금',sec:'증권'};
 const CURS={USD:'$',JPY:'¥',CNY:'CN¥'};
-const COLORS={cash:'--c-cash',fx:'--c-fx',save:'--c-save',in:'--c-in',out:'--c-out'};
-const LBL={cash:'입출금',fx:'외화',save:'예적금',in:'수입',out:'지출'};
+const COLORS={cash:'--c-cash',fx:'--c-fx',save:'--c-save',in:'--c-in',out:'--c-out',sec:'--c-sec'};
+const LBL={cash:'입출금',fx:'외화',save:'예적금',in:'수입',out:'지출',sec:'증권'};
 const $=s=>document.querySelector(s);
 const ls={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
 let items=ls.get('assets',[]);
 let flows=ls.get('flows',[]); // {id,kind:'in'|'out',name,amount,month:'YYYY-MM',monthly?}
 let mo=0;
+let openId=null,editing=false;
 let rates=ls.get('rates',{USD:0,JPY:0,CNY:0}); // KRW per 1 unit
 let editId=null,curType='cash';
 const fmt=(n,d=0)=>n.toLocaleString('ko-KR',{minimumFractionDigits:d,maximumFractionDigits:d});
-const krw=i=>i.type==='fx'?i.amount*(rates[i.cur]||0):i.amount;
+const fmtN=(n,d)=>Number(n).toLocaleString('ko-KR',{maximumFractionDigits:d});
+const krw=i=>i.type==='sec'?i.price*i.qty*(i.cur==='USD'?(rates.USD||0):1):i.type==='fx'?i.amount*(rates[i.cur]||0):i.amount;
 const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const main=i=>i.type==='out'?'-₩'+fmt(i.amount):i.type==='in'?'+₩'+fmt(i.amount):i.type==='fx'?CURS[i.cur]+fmt(i.amount,i.cur==='JPY'?0:2):'₩'+fmt(i.amount);
-const sub=i=>i.note?i.note:(i.type==='fx'&&rates[i.cur]?'₩'+fmt(Math.round(krw(i))):'');
+const main=i=>i.type==='sec'?'₩'+fmt(Math.round(krw(i))):i.type==='out'?'-₩'+fmt(i.amount):i.type==='in'?'+₩'+fmt(i.amount):i.type==='fx'?CURS[i.cur]+fmt(i.amount,i.cur==='JPY'?0:2):'₩'+fmt(i.amount);
+const sub=i=>i.note?i.note:(i.type==='sec'?`${i.ticker} ${fmtN(i.qty,4)}주`:i.type==='fx'&&rates[i.cur]?'₩'+fmt(Math.round(krw(i))):'');
 const pill=t=>`<span class="pill t-${t}">${LBL[t]}</span>`;
 
 // colors: per-type hue, varying lightness per account
@@ -234,6 +255,22 @@ function ring(svg,entries){
 }
 const rowHtml=i=>`${pill(i.type)}<span class="nm">${esc(i.name)}</span>
     <div class="r"><b>${main(i)}</b>${sub(i)?`<small>${esc(sub(i))}</small>`:''}</div>`;
+
+const ICON_EDIT='<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>';
+const ICON_DEL='<svg viewBox="0 0 24 24"><path d="M5 7h14M10 11v6M14 11v6M6 7l1 12h10l1-12M9 7V4h6v3"/></svg>';
+function detailHtml(i){
+  const ro=editing?'':' readonly';
+  const tx=(k,key,v)=>`<label class="fl"><span class="k">${k}</span><input data-f="${key}" value="${esc(String(v))}"${ro} maxlength="30"></label>`;
+  const nu=(k,key,v,d)=>`<label class="fl"><span class="k">${k}</span><input data-f="${key}" data-d="${d}" inputmode="decimal" value="${fmtN(v,d)}"${ro}></label>`;
+  const sl=(k,key,v,opts)=>`<label class="fl"><span class="k">${k}</span><select data-f="${key}"${editing?'':' disabled'}>${opts.map(([a,b])=>`<option value="${a}"${a===v?' selected':''}>${b}</option>`).join('')}</select></label>`;
+  let h='';
+  if(i.type==='sec'){
+    h=tx('계좌명','name',i.name)+tx('종목','ticker',i.ticker)+nu('평단가','price',i.price,2)+nu('수량','qty',i.qty,4)+sl('통화','cur',i.cur,[['KRW','원'],['USD','달러']]);
+  }else if(i.type==='fx'){
+    h=tx('계좌명','name',i.name)+sl('통화','cur',i.cur,Object.keys(CURS).map(c=>[c,c]))+nu('금액','amount',i.amount,i.cur==='JPY'?0:2);
+  }else h=tx('계좌명','name',i.name)+nu('금액','amount',i.amount,0);
+  return `<div class="detail${editing?' edit':''}">${h}<div class="da"><button type="button" class="ib${editing?' on':''}" data-act="edit" aria-label="수정">${ICON_EDIT}</button><button type="button" class="ib dl2" data-act="del" aria-label="삭제">${ICON_DEL}</button></div></div>`;
+}
 function build(m){
   const fl=viewFlows(m),add={},orphan=[],exp=[];
   fl.forEach(f=>{
@@ -250,7 +287,7 @@ function build(m){
   const net=vi.reduce((s,i)=>s+krw(i),0)+orphan.reduce((s,i)=>s+i.amount,0)-exp.reduce((s,i)=>s+i.amount,0);
   return {vi,orphan,exp,net};
 }
-function render(){
+function render(keep=false){
   const {vi,orphan,exp,net}=build(mo);
   $('#total').textContent=(net<0?'-':'')+'₩'+fmt(Math.abs(Math.round(net)));
   {
@@ -265,7 +302,11 @@ function render(){
   {const [y,m]=monthParts();$('#mlabel').textContent=`${y}년 ${m}월`}
   ring($('#svg'),[...vi,...orphan]);
   poolA=[...vi,...orphan,...exp];
-  $('#list').innerHTML=vi.map(i=>`<div class="row" data-id="${i.id}">${rowHtml(i)}</div>`).join('')
+  if(keep){
+    vi.forEach(i=>{const row=$('#list').querySelector(`.row[data-id="${i.id}"]`);if(!row)return;
+      row.querySelector('.nm').textContent=i.name;row.querySelector('.r').innerHTML=`<b>${main(i)}</b>${sub(i)?`<small>${esc(sub(i))}</small>`:''}`});
+  }else
+  $('#list').innerHTML=vi.map(i=>`<div class="row${i.id===openId?' open':''}" data-id="${i.id}">${rowHtml(i)}${i.id===openId?detailHtml(items.find(x=>x.id===i.id)||i):''}</div>`).join('')
     +[...orphan,...exp].map(f=>`<div class="row flow${f.type==='out'?' ex':''}">${rowHtml(f)}</div>`).join('');
   renderIncome();
 }
@@ -334,7 +375,9 @@ function reAmt(el=amtEl,dec=decOk()){
 }
 amtEl.addEventListener('input',()=>reAmt());
 $('#iamt').addEventListener('input',()=>reAmt($('#iamt'),false));
-$('#cur').addEventListener('change',reAmt);
+$('#cur').addEventListener('change',()=>reAmt());
+$('#price').addEventListener('input',()=>reAmt($('#price'),true));
+$('#qty').addEventListener('input',()=>reAmt($('#qty'),true));
 
 // profile name
 const nmEl=$('#nm');
@@ -364,6 +407,8 @@ document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{
 function buildTypes(){
   $('#types').innerHTML=Object.entries(TYPES).map(([k,v])=>`<button type="button" data-t="${k}" class="${k===curType?'on':''}">${v}</button>`).join('');
   $('#cur').classList.toggle('hide',curType!=='fx');
+  $('#amtrow').classList.toggle('hide',curType==='sec');
+  $('#secf').classList.toggle('hide',curType!=='sec');
 }
 $('#cur').innerHTML=Object.keys(CURS).map(c=>`<option>${c}</option>`).join('');
 $('#types').onclick=e=>{const b=e.target.closest('button');if(!b)return;curType=b.dataset.t;buildTypes();reAmt()};
@@ -372,7 +417,7 @@ function openModal(id){
   curType=i?i.type:'cash';
   $('#mt').textContent=i?'종목 수정':'종목 추가';
   $('#name').value=i?i.name:'';
-  $('#amount').value='';
+  $('#amount').value='';['#ticker','#price','#qty'].forEach(q=>$(q).value='');$('#scur').value='KRW';
   $('#cur').value=i&&i.cur?i.cur:'USD';
   $('#del').classList.toggle('hide',!i);
   buildTypes();if(i)amtEl.value=fmtAmt(String(i.amount));$('#ov').classList.add('open');
@@ -387,7 +432,8 @@ function openIncome(id){
   $('#iname').value=f?f.name:'';
   $('#iamt').value=f?fmtAmt(String(f.amount),false):'';
   const sel=$('#iacct');
-  sel.innerHTML=items.length?items.map(i=>`<option value="${i.id}">${esc(i.name)}</option>`).join(''):'<option value="">계좌 없음</option>';
+  const ac=items.filter(i=>i.type!=='sec');
+  sel.innerHTML=ac.length?ac.map(i=>`<option value="${i.id}">${esc(i.name)}</option>`).join(''):'<option value="">계좌 없음</option>';
   if(f&&items.some(i=>i.id===f.acct))sel.value=f.acct;
   $('#idel').classList.toggle('hide',!f);
   $('#ov2').classList.add('open');setTimeout(()=>$('#iname').focus(),50);
@@ -410,8 +456,14 @@ $('#ov').addEventListener('pointerdown',e=>{if(e.target.id==='ov')closeModal()})
 $('#del').onclick=()=>{items=items.filter(v=>v.id!==editId);save();closeModal()};
 $('#form').onsubmit=e=>{
   e.preventDefault();
-  const amount=parseFloat($('#amount').value.replace(/,/g,''));
   const name=$('#name').value.trim();
+  if(curType==='sec'){
+    const ticker=$('#ticker').value.trim(),price=parseFloat($('#price').value.replace(/,/g,'')),qty=parseFloat($('#qty').value.replace(/,/g,''));
+    if(!name||!ticker||isNaN(price)||price<0||isNaN(qty)||qty<=0)return;
+    items.push({id:String(Date.now()),type:'sec',name,ticker,price,qty,cur:$('#scur').value});
+    save();closeModal();return;
+  }
+  const amount=parseFloat($('#amount').value.replace(/,/g,''));
   if(!name||isNaN(amount)||amount<0)return;
   const o={id:editId||String(Date.now()),type:curType,name,amount:curType==='fx'?amount:Math.round(amount)};
   if(curType==='fx')o.cur=$('#cur').value;
@@ -420,18 +472,50 @@ $('#form').onsubmit=e=>{
 };
 function save(){ls.set('assets',items);render();push()}
 
-// tap = edit, long press = drag to reorder
+// inline detail editing
 const list=$('#list');
+list.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const row=b.closest('.row[data-id]'),id=row.dataset.id;
+  if(b.dataset.act==='del'){
+    if(confirm('삭제할까요?')){items=items.filter(v=>v.id!==id);openId=null;editing=false;save()}
+    return;
+  }
+  editing=!editing;
+  const d=row.querySelector('.detail');d.classList.toggle('edit',editing);b.classList.toggle('on',editing);
+  d.querySelectorAll('input').forEach(x=>x.readOnly=!editing);
+  d.querySelectorAll('select').forEach(x=>x.disabled=!editing);
+  if(editing){const f=d.querySelector('input');if(f)f.focus()}else document.activeElement&&document.activeElement.blur();
+});
+list.addEventListener('input',e=>{const el=e.target;if(el.dataset&&el.dataset.d!==undefined)reAmt(el,el.dataset.d!=='0')});
+list.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('input'))e.target.blur()});
+list.addEventListener('change',e=>{
+  const el=e.target,row=el.closest('.row[data-id]');if(!el.dataset||!el.dataset.f||!row)return;
+  const it=items.find(v=>v.id===row.dataset.id);if(!it)return;
+  const k=el.dataset.f;let v=el.value.trim();
+  if(k==='name'||k==='ticker'){if(v)it[k]=v;el.value=it[k]}
+  else if(k==='cur'){it.cur=v;if(it.type==='fx'){const a=row.querySelector('[data-f="amount"]');if(a)a.value=fmtN(it.amount,v==='JPY'?0:2);if(v==='JPY')it.amount=Math.round(it.amount)}}
+  else{
+    let n=parseFloat(v.replace(/,/g,''));
+    if(isNaN(n)||n<0||(k==='qty'&&n<=0)){el.value=fmtN(it[k],+el.dataset.d)}
+    else{if(k==='amount')n=it.type==='fx'&&it.cur!=='JPY'?Math.round(n*100)/100:Math.round(n);it[k]=n;el.value=fmtN(n,+el.dataset.d)}
+  }
+  ls.set('assets',items);render(true);push();
+});
+
+// tap = edit, long press = drag to reorder
 let pt=null,st=null,dr=null;
 const rows=()=>[...list.querySelectorAll('.row[data-id]')];
 function endPress(){clearTimeout(pt);document.querySelectorAll('.row.press').forEach(r=>r.classList.remove('press'))}
 list.addEventListener('pointerdown',e=>{
+  if(e.target.closest('.detail'))return;
   const row=e.target.closest('.row[data-id]');if(!row||dr)return;
   st={row,id:row.dataset.id,x:e.clientX,y:e.clientY};
   row.classList.add('press');
   pt=setTimeout(startDrag,420);
 });
 function startDrag(){
+  if(openId){openId=null;editing=false;render()}
   const row=list.querySelector(`.row[data-id="${st.id}"]`);if(!row){st=null;return}row.classList.remove('press');
   const all=rows(),rects=all.map(x=>x.getBoundingClientRect()),d=all.indexOf(row);
   navigator.vibrate&&navigator.vibrate(10);
@@ -462,7 +546,7 @@ document.addEventListener('pointerup',()=>{
     items=ids.map(id=>items.find(v=>v.id===id));
     dr=null;st=null;save();return;
   }
-  if(st){const row=st.row;endPress();st=null;if(!$('#ov').classList.contains('open'))openModal(row.dataset.id)}
+  if(st){const row=st.row;endPress();st=null;if(!$('#ov').classList.contains('open')){const id=row.dataset.id;openId=openId===id?null:id;editing=false;render()}}
 });
 document.addEventListener('pointercancel',()=>{endPress();if(!dr)st=null});
 document.addEventListener('touchmove',e=>{if(dr)e.preventDefault()},{passive:false});
@@ -482,7 +566,7 @@ async function loadRates(){
       for(const c of Object.keys(CURS))if(j.rates&&j.rates[c])rates[c]=1/j.rates[c];
     }catch{}
   }
-  ls.set('rates',rates);if(!dr)render();
+  ls.set('rates',rates);if(!dr)render(editing);
 }
 // cloud sync (Supabase)
 const SB='https://xbfbksavomeevaxghbsn.supabase.co',SKEY='sb_publishable_M0eH-Owaq7kzPJuAdGn_dQ_iKdXvEc2',SK='40520451549947cc8d15b7cc51192e3e7927712bd6ce43eeb016f6532af275f2';
@@ -492,7 +576,7 @@ function push(){clearTimeout(pushT);pushT=setTimeout(()=>{pushT=null;rpc('moakr_
 async function pull(){
   try{
     const d=await rpc('moakr_get',{k:SK});
-    if(pushT||dr||$('#ov').classList.contains('open')||$('#ov2').classList.contains('open')||nmEl.isContentEditable)return;
+    if(pushT||dr||editing||$('#ov').classList.contains('open')||$('#ov2').classList.contains('open')||nmEl.isContentEditable)return;
     if(d&&Array.isArray(d.items)){
       if(JSON.stringify(d.items)!==JSON.stringify(items)){items=d.items;ls.set('assets',items);render()}
       if(Array.isArray(d.flows)&&JSON.stringify(d.flows)!==JSON.stringify(flows)){flows=d.flows;ls.set('flows',flows);render()}
