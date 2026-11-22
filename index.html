@@ -125,7 +125,13 @@ nav span{font-size:10px;font-weight:600;line-height:1}
   </div></div>
   <div class="card list" id="list"></div>
 </div>
-<div class="view" id="v-1"></div>
+<div class="view" id="v-1">
+  <div class="card chart-card"><div class="chart" id="ichart">
+    <svg viewBox="0 0 200 200" id="isvg"></svg>
+    <div class="center"><div class="mo"><button id="imp" aria-label="이전 달"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><span id="imlabel"></span><button id="imn" aria-label="다음 달"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button></div><b id="itotal">₩0</b></div>
+  </div></div>
+  <div class="card list" id="ilist"></div>
+</div>
 <div class="view" id="v-2"></div>
 </main>
 <div class="dock"><nav id="nav"><i class="ind" id="ind"></i>
@@ -134,6 +140,17 @@ nav span{font-size:10px;font-weight:600;line-height:1}
   <button data-i="2"><svg viewBox="0 0 24 24"><path d="M12 15V4M7 8.5l5-5 5 5M5 20h14"/></svg><span>지출</span></button>
 </nav><button class="add" id="add" aria-label="추가"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M9 3v12M3 9h12"/></svg></button></div>
 <div id="tip"></div>
+<div class="ov" id="ov2"><form class="modal" id="iform" autocomplete="off">
+  <h2 id="imt">수입 추가</h2>
+  <label class="f"><input id="iname" placeholder="수입명" required maxlength="30"></label>
+  <label class="f"><input id="iamt" placeholder="금액" inputmode="numeric" required></label>
+  <label class="f"><select id="iacct" required></select></label>
+  <div class="btns">
+    <button type="button" class="del hide" id="idel">삭제</button>
+    <button type="button" id="icancel">취소</button>
+    <button type="submit" class="ok">저장</button>
+  </div>
+</form></div>
 <div class="ov" id="ov"><form class="modal" id="form" autocomplete="off">
   <h2 id="mt">종목 추가</h2>
   <div class="seg-t" id="types"></div>
@@ -164,15 +181,15 @@ const fmt=(n,d=0)=>n.toLocaleString('ko-KR',{minimumFractionDigits:d,maximumFrac
 const krw=i=>i.type==='fx'?i.amount*(rates[i.cur]||0):i.amount;
 const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const main=i=>i.type==='out'?'-₩'+fmt(i.amount):i.type==='fx'?CURS[i.cur]+fmt(i.amount,i.cur==='JPY'?0:2):'₩'+fmt(i.amount);
-const sub=i=>i.type==='fx'&&rates[i.cur]?'₩'+fmt(Math.round(krw(i))):'';
+const main=i=>i.type==='out'?'-₩'+fmt(i.amount):i.type==='in'?'+₩'+fmt(i.amount):i.type==='fx'?CURS[i.cur]+fmt(i.amount,i.cur==='JPY'?0:2):'₩'+fmt(i.amount);
+const sub=i=>i.note?i.note:(i.type==='fx'&&rates[i.cur]?'₩'+fmt(Math.round(krw(i))):'');
 const pill=t=>`<span class="pill t-${t}">${LBL[t]}</span>`;
 
 // colors: per-type hue, varying lightness per account
 function shade(i,idx){
   const base=css(COLORS[i.type]);
   const same=items.filter(x=>x.type===i.type);
-  const k=Math.max(0,same.indexOf(i));
+  const k=Math.max(0,same.findIndex(x=>x.id===i.id));
   return `color-mix(in srgb, ${base} ${Math.max(45,100-k*14)}%, ${css('--bg')})`;
 }
 
@@ -183,49 +200,79 @@ function arc(a0,a1,r){
 }
 
 const baseM=()=>{const n=new Date();return n.getFullYear()*12+n.getMonth()};
+const keyOf=M=>Math.floor(M/12)+'-'+String(M%12+1).padStart(2,'0');
 function viewFlows(){
-  if(mo<=0)return [];
+  if(mo<0)return [];
   const b=baseM(),M=b+mo,out=[];
   flows.forEach(f=>{
     const [y,m]=String(f.month).split('-').map(Number);if(!y||!m)return;
     const st=y*12+m-1;
-    const n=f.monthly?Math.max(0,M-Math.max(st,b+1)+1):(st>b&&st<=M?1:0);
-    if(n>0)out.push({id:'f:'+f.id,type:f.kind,name:f.name,amount:f.amount*n,flow:true});
+    const n=f.monthly?Math.max(0,M-Math.max(st,b)+1):(st>=b&&st<=M?1:0);
+    if(n>0)out.push({fid:f.id,kind:f.kind,name:f.name,amount:f.amount*n,acct:f.acct});
   });
   return out;
 }
-function monthParts(){const M=baseM()+mo;return [Math.floor(M/12),M%12+1]}
-function render(){
-  const fl=viewFlows(),all=[...items,...fl];
-  const net=items.reduce((s,i)=>s+krw(i),0)+fl.reduce((s,f)=>s+(f.type==='in'?f.amount:-f.amount),0);
-  const cg=all.filter(i=>i.type!=='out'),gross=cg.reduce((s,i)=>s+krw(i),0);
-  $('#total').textContent=(net<0?'-':'')+'₩'+fmt(Math.abs(Math.round(net)));
-  {const [y,m]=monthParts();$('#mlabel').textContent=`${y}년 ${m}월`}
-  const svg=$('#svg');
+const monthParts=()=>{const M=baseM()+mo;return [Math.floor(M/12),M%12+1]};
+let poolA=[],poolI=[];
+function ring(svg,entries){
+  const g=entries.reduce((s,i)=>s+krw(i),0);
   let h='<circle class="ring-empty" cx="100" cy="100" r="78"/>';
-  if(gross>0){
-    let a=0;const gap=cg.length>1?0.025:0;
-    cg.forEach(i=>{
+  if(g>0){
+    let a=0;const gap=entries.length>1?0.025:0;
+    entries.forEach(i=>{
       const v=krw(i);if(v<=0)return;
-      const span=v/gross*Math.PI*2;
+      const span=v/g*Math.PI*2;
       const s=a+gap/2,e=Math.min(a+span-gap/2,a+Math.PI*2-0.0001);
-      h+=`<path class="seg${i.type==='out'?' dash':''}" data-id="${i.id}" d="${arc(s,Math.max(e,s+0.001),78)}" stroke="${shade(i)}"/>`;
+      h+=`<path class="seg" data-id="${i.id}" d="${arc(s,Math.max(e,s+0.001),78)}" stroke="${shade(i)}"/>`;
       a+=span;
     });
   }
   svg.innerHTML=h;
-  const row=i=>`${pill(i.type)}<span class="nm">${esc(i.name)}</span>
-    <div class="r"><b>${main(i)}</b>${sub(i)?`<small>${sub(i)}</small>`:''}</div>`;
-  $('#list').innerHTML=items.map(i=>`<div class="row" data-id="${i.id}">${row(i)}</div>`).join('')
-    +fl.map(f=>`<div class="row flow${f.type==='out'?' ex':''}">${row(f)}</div>`).join('');
+}
+const rowHtml=i=>`${pill(i.type)}<span class="nm">${esc(i.name)}</span>
+    <div class="r"><b>${main(i)}</b>${sub(i)?`<small>${esc(sub(i))}</small>`:''}</div>`;
+function render(){
+  const fl=viewFlows(),add={},orphan=[],exp=[];
+  fl.forEach(f=>{
+    if(f.kind==='in'){
+      if(items.some(i=>i.id===f.acct))add[f.acct]=(add[f.acct]||0)+f.amount;
+      else orphan.push({id:'f:'+f.fid,type:'in',name:f.name,amount:f.amount});
+    }else exp.push({id:'f:'+f.fid,type:'out',name:f.name,amount:f.amount});
+  });
+  const vi=items.map(i=>{
+    const a=add[i.id];if(!a)return i;
+    if(i.type!=='fx')return {...i,amount:i.amount+a};
+    const r=rates[i.cur];return r?{...i,amount:Math.round((i.amount+a/r)*100)/100}:i;
+  });
+  const net=vi.reduce((s,i)=>s+krw(i),0)+orphan.reduce((s,i)=>s+i.amount,0)-exp.reduce((s,i)=>s+i.amount,0);
+  $('#total').textContent=(net<0?'-':'')+'₩'+fmt(Math.abs(Math.round(net)));
+  {const [y,m]=monthParts();$('#mlabel').textContent=`${y}년 ${m}월`}
+  ring($('#svg'),[...vi,...orphan]);
+  poolA=[...vi,...orphan,...exp];
+  $('#list').innerHTML=vi.map(i=>`<div class="row" data-id="${i.id}">${rowHtml(i)}</div>`).join('')
+    +[...orphan,...exp].map(f=>`<div class="row flow${f.type==='out'?' ex':''}">${rowHtml(f)}</div>`).join('');
+  renderIncome();
+}
+let imo=0;
+function renderIncome(){
+  const key=keyOf(baseM()+imo),M=baseM()+imo;
+  const ls_=flows.filter(f=>f.kind==='in'&&f.month===key).map(f=>({id:'f:'+f.id,fid:f.id,type:'in',name:f.name,amount:f.amount,note:(items.find(i=>i.id===f.acct)||{}).name||''}));
+  poolI=ls_;
+  const tot=ls_.reduce((s,i)=>s+i.amount,0);
+  $('#itotal').textContent='₩'+fmt(tot);
+  $('#imlabel').textContent=`${Math.floor(M/12)}년 ${M%12+1}월`;
+  ring($('#isvg'),ls_);
+  $('#ilist').innerHTML=ls_.map(i=>`<div class="row" data-fid="${i.fid}">${rowHtml(i)}</div>`).join('');
 }
 $('#mp').onclick=()=>{mo=Math.max(mo-1,-12);hideTip();render()};
 $('#mn').onclick=()=>{mo=Math.min(mo+1,60);hideTip();render()};
+$('#imp').onclick=()=>{imo=Math.max(imo-1,-12);hideTip();renderIncome()};
+$('#imn').onclick=()=>{imo=Math.min(imo+1,60);hideTip();renderIncome()};
 
 // tooltip
 const tip=$('#tip');
-function showTip(id,x,y){
-  const i=[...items,...viewFlows()].find(v=>v.id===id);if(!i)return;
+function showTip(id,x,y,pool,svg){
+  const i=pool.find(v=>v.id===id);if(!i)return;
   tip.innerHTML=`<div class="h">${pill(i.type)}<span class="n">${esc(i.name)}</span></div><div class="a">${main(i)}${sub(i)?`<span class="k">${sub(i)}</span>`:''}</div>`;
   tip.classList.add('show');
   const w=tip.offsetWidth,hh=tip.offsetHeight;
@@ -234,40 +281,43 @@ function showTip(id,x,y){
   if(l<10)l=10;
   if(t<10)t=y+18;
   tip.style.left=l+'px';tip.style.top=t+'px';
-  $('#chart').classList.add('dim');
-  document.querySelectorAll('.seg').forEach(s=>s.classList.toggle('on',s.dataset.id===id));
+  svg.parentElement.classList.add('dim');
+  svg.querySelectorAll('.seg').forEach(s=>s.classList.toggle('on',s.dataset.id===id));
 }
-function hideTip(){tip.classList.remove('show');$('#chart').classList.remove('dim');document.querySelectorAll('.seg.on').forEach(s=>s.classList.remove('on'))}
-const svgEl=$('#svg');
-function probe(e){
-  const el=document.elementFromPoint(e.clientX,e.clientY);
-  if(el&&el.classList&&el.classList.contains('seg'))showTip(el.dataset.id,e.clientX,e.clientY);else hideTip();
+function hideTip(){tip.classList.remove('show');document.querySelectorAll('.chart').forEach(c=>c.classList.remove('dim'));document.querySelectorAll('.seg.on').forEach(s=>s.classList.remove('on'))}
+function bindChart(svg,pool){
+  const probe=e=>{
+    const el=document.elementFromPoint(e.clientX,e.clientY);
+    if(el&&el.classList&&el.classList.contains('seg')&&svg.contains(el))showTip(el.dataset.id,e.clientX,e.clientY,pool(),svg);else hideTip();
+  };
+  svg.addEventListener('pointermove',probe);
+  svg.addEventListener('pointerdown',probe);
+  svg.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')hideTip()});
 }
-svgEl.addEventListener('pointermove',probe);
-svgEl.addEventListener('pointerdown',probe);
-svgEl.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')hideTip()});
-document.addEventListener('pointerdown',e=>{if(!e.target.closest('#svg'))hideTip()});
+bindChart($('#svg'),()=>poolA);bindChart($('#isvg'),()=>poolI);
+document.addEventListener('pointerdown',e=>{if(!e.target.closest('.chart svg'))hideTip()});
 
 // amount input
 const amtEl=$('#amount');
 const decOk=()=>curType==='fx'&&$('#cur').value!=='JPY';
-function fmtAmt(raw){
+function fmtAmt(raw,dec=decOk()){
   let v=raw.replace(/[^\d.]/g,'');
-  const dot=decOk()&&v.includes('.');
+  const dot=dec&&v.includes('.');
   const p=v.split('.');
   let int=p[0].replace(/^0+(?=\d)/,'');
   const out=int.replace(/\B(?=(\d{3})+(?!\d))/g,',');
   return dot?out+'.'+p.slice(1).join('').slice(0,2):out;
 }
-function reAmt(){
-  const pos=amtEl.selectionStart??amtEl.value.length;
-  const n=amtEl.value.slice(0,pos).replace(/[^\d.]/g,'').length;
-  amtEl.value=fmtAmt(amtEl.value);
+function reAmt(el=amtEl,dec=decOk()){
+  const pos=el.selectionStart??el.value.length;
+  const n=el.value.slice(0,pos).replace(/[^\d.]/g,'').length;
+  el.value=fmtAmt(el.value,dec);
   let c=0,k=0;
-  for(;k<amtEl.value.length&&c<n;k++)if(/[\d.]/.test(amtEl.value[k]))c++;
-  try{amtEl.setSelectionRange(k,k)}catch{}
+  for(;k<el.value.length&&c<n;k++)if(/[\d.]/.test(el.value[k]))c++;
+  try{el.setSelectionRange(k,k)}catch{}
 }
-amtEl.addEventListener('input',reAmt);
+amtEl.addEventListener('input',()=>reAmt());
+$('#iamt').addEventListener('input',()=>reAmt($('#iamt'),false));
 $('#cur').addEventListener('change',reAmt);
 
 // profile name
@@ -312,8 +362,33 @@ function openModal(id){
   buildTypes();if(i)amtEl.value=fmtAmt(String(i.amount));$('#ov').classList.add('open');
   setTimeout(()=>$('#name').focus(),50);
 }
-const closeModal=()=>$('#ov').classList.remove('open');
-$('#add').onclick=()=>{if(tab===0)openModal()};
+const closeModal=()=>{$('#ov').classList.remove('open');$('#ov2').classList.remove('open')};
+$('#add').onclick=()=>{if(tab===0)openModal();else if(tab===1)openIncome()};
+let iEdit=null;
+function openIncome(id){
+  iEdit=id||null;const f=flows.find(v=>v.id===id);
+  $('#imt').textContent=f?'수입 수정':'수입 추가';
+  $('#iname').value=f?f.name:'';
+  $('#iamt').value=f?fmtAmt(String(f.amount),false):'';
+  const sel=$('#iacct');
+  sel.innerHTML=items.length?items.map(i=>`<option value="${i.id}">${esc(i.name)}</option>`).join(''):'<option value="">계좌 없음</option>';
+  if(f&&items.some(i=>i.id===f.acct))sel.value=f.acct;
+  $('#idel').classList.toggle('hide',!f);
+  $('#ov2').classList.add('open');setTimeout(()=>$('#iname').focus(),50);
+}
+$('#icancel').onclick=closeModal;
+$('#ov2').addEventListener('pointerdown',e=>{if(e.target.id==='ov2')closeModal()});
+$('#idel').onclick=()=>{flows=flows.filter(v=>v.id!==iEdit);saveFlows();closeModal()};
+$('#iform').onsubmit=e=>{
+  e.preventDefault();
+  const amount=parseInt($('#iamt').value.replace(/,/g,''),10),name=$('#iname').value.trim(),acct=$('#iacct').value;
+  if(!name||isNaN(amount)||amount<=0||!acct)return;
+  if(iEdit)flows=flows.map(v=>v.id===iEdit?{...v,name,amount,acct}:v);
+  else flows.push({id:String(Date.now()),kind:'in',name,amount,acct,month:keyOf(baseM()+imo)});
+  saveFlows();closeModal();
+};
+function saveFlows(){ls.set('flows',flows);render();push()}
+$('#ilist').addEventListener('click',e=>{const row=e.target.closest('.row[data-fid]');if(row)openIncome(row.dataset.fid)});
 $('#cancel').onclick=closeModal;
 $('#ov').addEventListener('pointerdown',e=>{if(e.target.id==='ov')closeModal()});
 $('#del').onclick=()=>{items=items.filter(v=>v.id!==editId);save();closeModal()};
@@ -401,7 +476,7 @@ function push(){clearTimeout(pushT);pushT=setTimeout(()=>{pushT=null;rpc('moakr_
 async function pull(){
   try{
     const d=await rpc('moakr_get',{k:SK});
-    if(pushT||dr||$('#ov').classList.contains('open')||nmEl.isContentEditable)return;
+    if(pushT||dr||$('#ov').classList.contains('open')||$('#ov2').classList.contains('open')||nmEl.isContentEditable)return;
     if(d&&Array.isArray(d.items)){
       if(JSON.stringify(d.items)!==JSON.stringify(items)){items=d.items;ls.set('assets',items);render()}
       if(Array.isArray(d.flows)&&JSON.stringify(d.flows)!==JSON.stringify(flows)){flows=d.flows;ls.set('flows',flows);render()}
