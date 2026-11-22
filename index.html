@@ -130,6 +130,10 @@ nav span{font-size:10px;font-weight:600;line-height:1}
 .ib.dl2{color:#f04452}
 .secf{margin-bottom:0}
 .sp{text-align:center}
+.sr{display:flex;gap:14px;text-align:left;font-size:14px;line-height:2;font-variant-numeric:tabular-nums}
+.sr span:first-child{width:36px;flex:none;color:var(--mute)}
+.sr.bal{font-weight:700;color:var(--fg)}
+.sr.bal span:first-child{color:var(--fg)}
 .sp .mo{position:static}
 .sdiv{margin-top:22px;padding-top:20px;border-top:1px solid var(--line)}
 .sp b{display:block;margin-top:0;font-size:24px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
@@ -155,7 +159,7 @@ nav span{font-size:10px;font-weight:600;line-height:1}
   <div class="card chart-card sp">
     <div class="mo"><button id="imp" aria-label="이전 달"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><span id="imlabel"></span><button id="imn" aria-label="다음 달"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button></div>
     <div class="sk"><svg id="isvg" viewBox="0 0 360 1"></svg></div>
-    <div class="sdiv"><b id="itotal">₩0</b><div class="dl" id="idelta"></div></div>
+    <div class="sdiv" id="idelta"></div>
   </div>
   <div class="card list" id="ilist"></div>
 </div>
@@ -365,8 +369,8 @@ function renderIncome(){
   const ins=mk('in'),outs=mk('out');
   const I=ins.reduce((s,x)=>s+x.amount,0),E=outs.reduce((s,x)=>s+x.amount,0);
   poolI=[{id:'inc',type:'in',name:'소득 합계',amount:I},...ins,...outs,{id:'rest',type:'rest',name:'잔액',amount:I-E},{id:'def',type:'rest',name:'부족',amount:E-I}];
-  $('#itotal').textContent=(I-E<0?'-':'')+'₩'+fmt(Math.abs(I-E));
-  $('#idelta').innerHTML=(I||E)?`<div>소득 ₩${fmt(I)}</div><div>지출 ₩${fmt(E)}</div>`:'';
+  {const bal=I-E,w=n=>(n<0?'-':'')+'₩'+fmt(Math.abs(n));
+  $('#idelta').innerHTML=`<div class="sr"><span>소득</span><span>${w(I)}</span></div><div class="sr"><span>지출</span><span>${w(E)}</span></div><div class="sr bal"><span>잔액</span><span>${w(bal)}</span></div>`;}
   $('#imlabel').textContent=`${Math.floor(M/12)}년 ${M%12+1}월`;
   sankey($('#isvg'),ins,outs,I,E);
   $('#ilist').innerHTML=[...ins,...outs].map(i=>`<div class="row${i.type==='out'?' ex':''}" data-fid="${i.fid}">${rowHtml(i)}</div>`).join('');
