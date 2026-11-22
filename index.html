@@ -131,12 +131,12 @@ nav span{font-size:10px;font-weight:600;line-height:1}
 .secf{margin-bottom:0}
 .sp{text-align:center}
 .sr{display:flex;align-items:baseline;gap:14px;padding-right:10px;text-align:left;font-size:14px;line-height:2;font-weight:400;color:var(--fg);font-variant-numeric:tabular-nums}
-.sr span:first-child{width:36px;flex:none}
+.sr span:nth-of-type(1){width:36px;flex:none}
+.dt{width:10px;height:10px;border-radius:50%;flex:none;margin-right:-4px;align-self:center}
 .sr.inc{font-weight:700}
 .sr.inc span:last-child{font-size:16px}
 .srs{display:inline-block}
 .sdiv{text-align:left}
-.sr.calc{border-bottom:1px solid var(--fg);padding-bottom:6px;margin-bottom:6px}
 .sp .mo{position:static}
 .sdiv{margin:22px -16px 0;padding:20px 16px 0;border-top:1px solid var(--line)}
 .sp b{display:block;margin-top:0;font-size:24px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
@@ -375,7 +375,7 @@ function renderIncome(){
   const I=ins.reduce((s,x)=>s+x.amount,0),E=outs.reduce((s,x)=>s+x.amount,0);
   poolI=[{id:'inc',type:'in',name:'소득 합계',amount:I},...ins,...outs,{id:'rest',type:'rest',name:'잔액',amount:I-E},{id:'def',type:'rest',name:'부족',amount:E-I}];
   {const bal=I-E,w=n=>(n<0?'-':'')+'₩'+fmt(Math.abs(n));
-  $('#idelta').innerHTML=`<div class="srs"><div class="sr inc"><span>소득</span><span>${w(I)}</span></div><div class="sr calc"><span>지출</span><span>${w(E)}</span></div><div class="sr"><span>잔액</span><span>${w(bal)}</span></div></div>`;}
+  $('#idelta').innerHTML=`<div class="srs"><div class="sr inc"><i class="dt" style="background:var(--c-in)"></i><span>소득</span><span>${w(I)}</span></div><div class="sr"><i class="dt" style="background:var(--c-out)"></i><span>지출</span><span>${w(E)}</span></div><div class="sr"><i class="dt" style="background:var(--mute)"></i><span>잔액</span><span>${w(bal)}</span></div></div>`;}
   $('#imlabel').textContent=`${Math.floor(M/12)}년 ${M%12+1}월`;
   sankey($('#isvg'),ins,outs,I,E);
   $('#ilist').innerHTML=[...ins,...outs].map(i=>`<div class="row${i.type==='out'?' ex':''}" data-fid="${i.fid}">${rowHtml(i)}</div>`).join('');
