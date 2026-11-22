@@ -22,6 +22,9 @@
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 input,select,[contenteditable]{-webkit-user-select:text;user-select:text}
+html,body{scrollbar-width:none;-ms-overflow-style:none;overscroll-behavior:none}
+::-webkit-scrollbar{display:none;width:0;height:0}
+html.nos,html.nos body{overflow:hidden;height:100%}
 html,body{margin:0;background:var(--bg);color:var(--fg);font-family:"Pretendard",-apple-system,"Noto Sans KR",system-ui,sans-serif;letter-spacing:-.01em}
 header{position:fixed;top:0;left:0;right:0;z-index:10;background:rgba(255,255,255,.55);-webkit-backdrop-filter:blur(22px) saturate(1.8);backdrop-filter:blur(22px) saturate(1.8)}
 .hin{max-width:520px;margin:0 auto;height:calc(66px + env(safe-area-inset-top));padding:calc(16px + env(safe-area-inset-top)) 16px 12px;display:flex;align-items:center;gap:10px}
@@ -369,6 +372,15 @@ function sankey(svg,ins,outs,I,E){
   svg.setAttribute('viewBox',`0 0 360 ${H+PAD+10}`);
   svg.innerHTML=links+nodes;
 }
+function fitSankey(){
+  if(tab!==1)return;
+  const svg=$('#isvg'),vb=svg.viewBox.baseVal;
+  if(!vb||vb.height<=1){svg.style.height='';return}
+  const nat=svg.clientWidth*vb.height/vb.width;
+  const top=svg.getBoundingClientRect().top,lim=document.querySelector('.dock').getBoundingClientRect().top-10;
+  svg.style.height=Math.max(60,Math.min(nat,lim-top))+'px';
+}
+addEventListener('resize',fitSankey);
 function renderIncome(){
   const M=baseM()+imo,key=keyOf(M);
   const nm=id=>(items.find(i=>i.id===id)||{}).name||'';
@@ -379,7 +391,7 @@ function renderIncome(){
   {const bal=I-E,w=n=>(n<0?'-':'')+'₩'+fmt(Math.abs(n));
   $('#idelta').innerHTML=`<div class="srs"><div class="sr inc"><i class="dt" style="background:var(--c-in)"></i><span>소득</span><span>${w(I)}</span></div><div class="sr"><i class="dt" style="background:var(--c-out)"></i><span>지출</span><span>${w(E)}</span></div><div class="sr"><i class="dt" style="background:var(--mute)"></i><span>잔액</span><span>${w(bal)}</span></div></div>`;}
   $('#imlabel').textContent=`${Math.floor(M/12)}년 ${M%12+1}월`;
-  sankey($('#isvg'),ins,outs,I,E);
+  sankey($('#isvg'),ins,outs,I,E);fitSankey();
 }
 $('#mp').onclick=()=>{mo=Math.max(mo-1,-12);hideTip();render()};
 $('#mn').onclick=()=>{mo=Math.min(mo+1,60);hideTip();render()};
@@ -465,7 +477,10 @@ document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('#nav button').forEach(x=>x.classList.toggle('on',x===b));
   $('#ind').style.transform=`translateX(${n*100}%)`;
   scrollTo(0,0);
+  document.documentElement.classList.toggle('nos',n===1);
+  fitSankey();
 });
+document.addEventListener('touchmove',e=>{if(tab===1&&!e.target.closest('.ov'))e.preventDefault()},{passive:false});
 
 // modal
 function buildTypes(){
