@@ -59,6 +59,8 @@ main{max-width:520px;margin:0 auto;padding:calc(68px + env(safe-area-inset-top))
 .t-sec{--pc:var(--c-sec)}
 .t-in{--pc:var(--c-in)}.t-out{--pc:var(--c-out)}
 .row.flow{cursor:default}
+.row.child{position:relative;padding-left:44px}
+.row.child::before{content:'';position:absolute;left:22px;top:-14px;width:12px;height:calc(50% + 14px);border-left:1.5px solid color-mix(in srgb,var(--mute) 55%,var(--bg));border-bottom:1.5px solid color-mix(in srgb,var(--mute) 55%,var(--bg));border-bottom-left-radius:6px}
 
 .center b{font-size:19px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .pill{display:inline-block;flex:none;min-width:40px;text-align:center;font-size:10px;line-height:1;padding:4px 7px;border-radius:999px;font-weight:600;color:#fff;background:var(--pc)}
@@ -351,8 +353,8 @@ function deleteAssetAt(it,Y){
   else it.end=Y;
 }
 const mIdx=k=>{const [y,mm]=String(k).split('-').map(Number);return y*12+mm-1};
-function build(m){
-  const fl=viewFlows(m),add={},orphan=[],exp=[];let orphanOut=0;
+function build(m,fm=m){
+  const fl=viewFlows(fm),add={},orphan=[],exp=[];let orphanOut=0;
   const its=itemsAt(m);
   const ok=id=>its.some(i=>i.id===id&&i.type!=='sec');
   const nm=id=>(items.find(i=>i.id===id)||{}).name||'';
@@ -486,7 +488,7 @@ function renderTrend(){
 function renderIncome(){
   const M=baseM()+imo,key=keyOf(M);
   const nm=id=>(items.find(i=>i.id===id)||{}).name||'';
-  const mk=k=>flows.filter(f=>f.kind===k&&f.month===key).map(f=>({id:'f:'+f.id,fid:f.id,type:k,name:f.name,amount:f.amount,note:nm(f.acct)})).sort((a,b)=>b.amount-a.amount);
+  const mk=k=>flows.filter(f=>f.kind===k&&f.month===key).map(f=>({id:'f:'+f.id,fid:f.id,type:k,name:f.name,amount:f.amount,acct:f.acct})).sort((a,b)=>b.amount-a.amount);
   const ins=mk('in'),outs=mk('out');
   const I=ins.reduce((s,x)=>s+x.amount,0),E=outs.reduce((s,x)=>s+x.amount,0);
   poolI=[{id:'inc',type:'in',name:'소득 합계',amount:I},...ins,...outs,{id:'rest',type:'rest',name:'잔액',amount:I-E},{id:'def',type:'rest',name:'부족',amount:E-I}];
@@ -494,9 +496,14 @@ function renderIncome(){
   $('#idelta').innerHTML=`<div class="srs"><div class="sr inc"><i class="dt" style="background:var(--c-in)"></i><span>소득</span><span>${w(I)}</span></div><div class="sr"><i class="dt" style="background:var(--c-out)"></i><span>지출</span><span>${w(E)}</span></div><div class="sr"><i class="dt" style="background:var(--mute)"></i><span>잔액</span><span>${w(bal)}</span></div></div>`;}
   $('#cmlabel').textContent=`${Math.floor(M/12)}년 ${M%12+1}월`;
   {
-    const rk=keyOf(baseM());
-    const as=itemsAt(imo).sort((a,b)=>krw(b)-krw(a));
-    const rows=[...as.map(x=>`<div class="row" data-aid="${x.id}">${rowHtml(x)}</div>`),...[...ins,...outs].map(x=>`<div class="row" data-fid="${x.fid}">${rowHtml(x)}</div>`)];
+    const open=build(imo,imo-1).vi.slice().sort((a,b)=>krw(b)-krw(a));
+    const fl=[...ins,...outs],okA=new Set(open.filter(x=>x.type!=='sec').map(x=>x.id));
+    const rows=[];
+    open.forEach(a=>{
+      rows.push(`<div class="row" data-aid="${a.id}">${rowHtml(a)}</div>`);
+      fl.filter(f=>f.acct===a.id).forEach(f=>rows.push(`<div class="row child" data-fid="${f.fid}">${rowHtml(f)}</div>`));
+    });
+    fl.filter(f=>!okA.has(f.acct)).forEach(f=>rows.push(`<div class="row" data-fid="${f.fid}">${rowHtml(f)}</div>`));
     $('#clist').innerHTML=rows.length?rows.join(''):'<div class="cemp">데이터가 없습니다</div>';
   }
   $('#imlabel').textContent=`${Math.floor(M/12)}년 ${M%12+1}월`;
@@ -626,7 +633,7 @@ $('#add').onclick=()=>{if(flowOpen()){closeFlow();return}openEntry('asset')};
 // unified entry popup (자산 / 소득 / 지출) on the expanding dock
 const popKey=()=>keyOf(baseM()+(tab===0?mo:imo));
 let ent=null;
-const blankEnt=()=>({src:null,id:null,month:null,kind:'asset',atype:'cash',name:'',amount:'',cur:'USD',ticker:'',price:'',qty:'',scur:'KRW',acct:''});
+const blankEnt=()=>({adj:0,src:null,id:null,month:null,kind:'asset',atype:'cash',name:'',amount:'',cur:'USD',ticker:'',price:'',qty:'',scur:'KRW',acct:''});
 const acctList=()=>itemsAt(tab===0?mo:imo).filter(i=>i.type!=='sec');
 function syncEnt(){
   const map={iname:'name',iamt:'amount',iticker:'ticker',iprice:'price',iqty:'qty',icur:'cur',iscur:'scur',iacct:'acct'};
@@ -644,7 +651,7 @@ function bodyHtml(){
   if(e.kind==='in'||e.kind==='out'){
     const L=acctList(),sel=L.some(a=>a.id===e.acct)?e.acct:(L[0]?L[0].id:'');
     const pre=e.kind==='in'?'입금':'출금';
-    const opts=L.length?L.map(a=>`<option value="${a.id}"${a.id===sel?' selected':''}>${pre} · ${v(a.name)}</option>`).join(''):'<option value="">계좌 없음</option>';
+    const opts=L.length?L.map(a=>`<option value="${a.id}"${a.id===sel?' selected':''}>${v(a.name)}</option>`).join(''):'<option value="">계좌 없음</option>';
     return `<label class="f">${name}</label><div class="xr"><select id="iacct" class="wide">${opts}</select></div><div class="xr">${amt(0)}<button type="submit" class="xok"${L.length?'':' disabled'}>저장</button></div>`;
   }
   return `<label class="f">${name}</label><div class="xr">${amt(0)}${save}</div>`;
@@ -662,9 +669,11 @@ function openEntry(kind,id){
   ent=blankEnt();
   if(id&&kind==='asset'){
     const raw=items.find(v=>v.id===id),a=raw?(snapAt(raw,popKey())||raw):null;
-    if(a)Object.assign(ent,{id,src:'asset',month:raw.month||null,kind:'asset',atype:a.type,name:a.name,
+    let eff=null;if(a){const mm=tab===0?mo:imo,bb=tab===0?build(mm):build(mm,mm-1);eff=bb.vi.find(x=>x.id===id)||null}
+    const adj=(a&&eff&&a.type!=='sec'&&a.amount!=null&&eff.amount!=null)?eff.amount-a.amount:0;
+    if(a)Object.assign(ent,{adj,id,src:'asset',month:raw.month||null,kind:'asset',atype:a.type,name:a.name,
       cur:a.type==='fx'?a.cur:'USD',scur:a.type==='sec'?a.cur:'KRW',
-      amount:a.amount!=null?fmtN(a.amount,a.type==='fx'&&a.cur!=='JPY'?2:0):'',
+      amount:a.amount!=null?fmtN(a.amount+adj,a.type==='fx'&&a.cur!=='JPY'?2:0):'',
       ticker:a.ticker||'',price:a.price!=null?fmtN(a.price,2):'',qty:a.qty!=null?fmtN(a.qty,4):''});
   }else if(id){
     const f=flows.find(v=>v.id===id);
@@ -699,7 +708,9 @@ $('#iform').onsubmit=e=>{
       if(!ticker||isNaN(price)||price<0||isNaN(qty)||qty<=0)return;
       obj={id,type:'sec',name,ticker,price,qty,cur:ent.scur};
     }else{
-      let a=n(ent.amount);if(isNaN(a)||a<0)return;
+      let a=n(ent.amount);if(isNaN(a))return;
+      if(ent.src==='asset')a-=(ent.adj||0);
+      if(a<0&&!(ent.src==='asset'&&ent.adj))return;
       if(t==='fx')obj={id,type:'fx',name,cur:ent.cur,amount:ent.cur==='JPY'?Math.round(a):Math.round(a*100)/100};
       else obj={id,type:t,name,amount:Math.round(a)};
     }
