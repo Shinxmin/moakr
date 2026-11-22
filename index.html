@@ -433,7 +433,7 @@ function renderTrend(){
   const items4=[-2,-1,0,1].map(k=>{
     const m=sel+k,v=totalAt(m);
     const rec=m>=0||flows.some(f=>f.month===keyOf(b+m))||items.some(i=>i.month===keyOf(b+m));
-    return {k,m,v,has:rec,est:m>0,label:`${(b+m)%12+1}월`};
+    return {k,m,v,has:rec&&Math.round(v/10000)!==0,est:m>0,label:`${(b+m)%12+1}월`};
   });
   const ctr=items4[2],ref=ctr.has?ctr.v:0;
   const mx=Math.max(...items4.filter(x=>x.has).map(x=>x.v),0);
