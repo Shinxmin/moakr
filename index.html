@@ -164,16 +164,22 @@ nav .tabs span{font-size:10px;font-weight:600;line-height:1}
 .cm{padding:14px 16px;margin-bottom:4px}
 .cemp{padding:60px 0;text-align:center;font-size:14px;color:var(--mute)}
 .emp{display:none;font-size:14px;color:var(--mute)}
-.sk.empty{display:flex;align-items:center;justify-content:center;padding-top:0;min-height:180px}
-.sk.empty svg{display:none}
-.sk.empty .emp{display:block}
 .sdiv{margin:20px 0 0}
 .sp b{display:block;margin-top:0;font-size:24px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .sp .dl{margin-top:8px;line-height:1.6}
-.sk{margin:24px -16px 0;padding:24px 16px 0;border-top:1px solid var(--line)}
-.tr{margin:24px -16px 0;padding:24px 16px 0;border-top:1px solid var(--line)}
-.tr svg{width:100%;display:block}
-.sk svg{width:100%;display:block;overflow:visible;touch-action:pan-y}
+#v-2{position:relative;margin:calc(-1*(68px + env(safe-area-inset-top))) -16px calc(-1*(132px + env(safe-area-inset-bottom)));height:max(100vh,560px);height:max(100dvh,560px)}
+.zone{position:absolute;left:0;right:0}
+.z1{top:0;height:25%;padding:calc(66px + env(safe-area-inset-top)) 16px 0;text-align:center;overflow:hidden}
+.z1 .mo{position:static;font-size:14px;color:var(--fg)}
+.z1 .mo button{color:var(--fg)}
+.z1 .sdiv{margin:6px 0 0}
+.z1 .sr{line-height:1.75}
+.z2{top:25%;height:40%;padding:12px 16px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:center}
+.z2 svg{width:100%;height:100%;display:block;overflow:visible}
+.z2.empty svg{display:none}
+.z2.empty .emp{display:block}
+.z3{top:65%;height:35%;padding:12px 16px calc(76px + env(safe-area-inset-bottom));border-top:1px solid var(--line);display:flex;justify-content:center}
+.z3 svg{width:50%;height:100%;display:block}
 .t-rest{--pc:var(--mute)}
 </style>
 </head>
@@ -193,12 +199,12 @@ nav .tabs span{font-size:10px;font-weight:600;line-height:1}
   <div class="card list" id="clist"></div>
 </div>
 <div class="view" id="v-2">
-  <div class="card chart-card sp">
+  <div class="zone z1">
     <div class="mo"><button id="imp" aria-label="이전 달"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><span id="imlabel"></span><button id="imn" aria-label="다음 달"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button></div>
     <div class="sdiv" id="idelta"></div>
-    <div class="sk" id="sk"><svg id="isvg" viewBox="0 0 360 1"></svg><div class="emp" id="iemp">데이터가 없습니다</div></div>
-    <div class="tr"><svg id="tsvg" viewBox="0 0 360 150"></svg></div>
   </div>
+  <div class="zone z2" id="sk"><svg id="isvg" viewBox="0 0 360 1"></svg><div class="emp" id="iemp">데이터가 없습니다</div></div>
+  <div class="zone z3"><svg id="tsvg" viewBox="0 0 200 160"></svg></div>
 </div>
 </main>
 <div id="scrim"></div>
@@ -410,19 +416,37 @@ function flowNet(M){
   });
   return n;
 }
+function totalAt(m){
+  const b=baseM();
+  return m>=-1?build(m).net:totalAt(m+1)-flowNet(b+m+1);
+}
+const fmtMan=v=>{const m=Math.round(v/10000);return (m<0?'-':'')+fmt(Math.abs(m))+'만원'};
 function renderTrend(){
-  const b=baseM(),t1=build(-1).net;
-  const vals=[t1-flowNet(b-1),t1,build(0).net,build(1).net];
-  const ref=vals[2],mx=Math.max(...vals,0);
-  const Hc=70,Hmax=105,base=118;
+  const b=baseM(),sel=imo;
+  const ref=totalAt(sel);
+  const items4=[-2,-1,0,1].map(k=>{
+    const m=sel+k,v=totalAt(m);
+    const has=k>=0||m>=0||flows.some(f=>f.month===keyOf(b+m));
+    return {k,m,v,has,est:m>0,label:`${(b+m)%12+1}월`};
+  });
+  const mx=Math.max(...items4.filter(x=>x.has).map(x=>x.v),0);
+  const Hc=58,Hmax=88,base=126;
   const sc=ref>0?Hc/ref:(mx>0?Hmax/mx:0);
   let h='';
-  vals.forEach((v,i)=>{
-    const bh=v>0?Math.min(Hmax,Math.max(2,v*sc)):2,cx=45+90*i;
-    const fill=i===2?'var(--sub)':i===3?'color-mix(in srgb,var(--mute) 22%,var(--bg))':'color-mix(in srgb,var(--mute) 45%,var(--bg))';
-    const ex=i===3?' stroke="var(--mute)" stroke-width="1.5" stroke-dasharray="4 3"':'';
-    h+=`<rect x="${cx-26}" y="${base-bh}" width="52" height="${bh}" rx="6" style="fill:${fill}"${ex}/>`
-      +`<text x="${cx}" y="141" text-anchor="middle" style="font-size:12px;font-weight:${i===2?700:500};fill:${i===2?'var(--fg)':'var(--mute)'}">${(b+i-2)%12+1}월</text>`;
+  items4.forEach((x,i)=>{
+    const cx=25+50*i;
+    let bh,fill,ex='',txt='';
+    if(!x.has){bh=8;fill='var(--bg)';ex=' stroke="var(--mute)" stroke-width="1.2" stroke-dasharray="1.5 2.5"'}
+    else{
+      bh=x.v>0?Math.min(Hmax,Math.max(3,x.v*sc)):3;
+      fill=x.k===0?'var(--sub)':x.est?'color-mix(in srgb,var(--mute) 22%,var(--bg))':'color-mix(in srgb,var(--mute) 45%,var(--bg))';
+      if(x.est)ex=' stroke="var(--mute)" stroke-width="1.2" stroke-dasharray="3 2.5"';
+      const y=base-bh-5;
+      txt=`<text x="${cx}" y="${x.est?y-10:y}" text-anchor="middle" style="font-size:9px;font-weight:600;fill:var(--fg)">${fmtMan(x.v)}</text>`
+        +(x.est?`<text x="${cx}" y="${y}" text-anchor="middle" style="font-size:8px;fill:var(--mute)">(예상)</text>`:'');
+    }
+    h+=`<rect x="${cx-17}" y="${base-bh}" width="34" height="${bh}" rx="5" style="fill:${fill}"${ex}/>`+txt
+      +`<text x="${cx}" y="148" text-anchor="middle" style="font-size:10px;font-weight:${x.k===0?700:500};fill:${x.k===0?'var(--fg)':'var(--mute)'}">${x.label}</text>`;
   });
   $('#tsvg').innerHTML=h;
 }
