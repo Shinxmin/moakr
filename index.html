@@ -348,6 +348,7 @@ function sankey(svg,ins,outs,I,E){
   const L=ins.map(x=>({...x})),R=outs.map(x=>({...x}));
   if(E>I)L.push({id:'def',type:'rest',name:'부족',amount:E-I});
   if(I>E)R.push({id:'rest',type:'rest',name:'잔액',amount:I-E});
+  L.sort((x,y)=>y.amount-x.amount);R.sort((x,y)=>y.amount-x.amount);
   const GAP=14,MINH=26,PAD=4,n=Math.max(L.length,R.length),H=Math.max(220,n*64);
   const colH=(c,k)=>c.reduce((s,x)=>s+Math.max(x.amount*k,MINH),0)+GAP*(c.length-1);
   let k=(H-GAP*(n-1))/T;
