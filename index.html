@@ -169,12 +169,12 @@ nav .tabs span{font-size:10px;font-weight:600;line-height:1}
 .sp .dl{margin-top:8px;line-height:1.6}
 #v-2{position:relative;margin:calc(-1*(68px + env(safe-area-inset-top))) -16px calc(-1*(132px + env(safe-area-inset-bottom)));height:max(100vh,560px);height:max(100dvh,560px)}
 .zone{position:absolute;left:0;right:0}
-.z1{top:0;height:30%;padding:calc(88px + env(safe-area-inset-top)) 16px 0;text-align:center;overflow:hidden}
+.z1{top:0;height:27%;padding:calc(78px + env(safe-area-inset-top)) 16px 0;text-align:center;overflow:hidden}
 .z1 .mo{position:static;font-size:14px;color:var(--fg)}
 .z1 .mo button{color:var(--fg)}
 .z1 .sdiv{margin:calc(6px + max(0px,13vh - 88px)) 0 0;text-align:center}
 .z1 .sr{line-height:1.75}
-.z2{top:30%;height:35%;padding:24px 16px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:center}
+.z2{top:27%;height:38%;padding:24px 16px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:center}
 .z2 svg{width:100%;height:100%;display:block;overflow:visible}
 .z2.empty svg{display:none}
 .z2.empty .emp{display:block}
@@ -426,8 +426,8 @@ function renderTrend(){
   const ref=totalAt(sel);
   const items4=[-2,-1,0,1].map(k=>{
     const m=sel+k,v=totalAt(m);
-    const has=k>=0||m>=0||flows.some(f=>f.month===keyOf(b+m));
-    return {k,m,v,has,est:k===1&&m>0,label:`${(b+m)%12+1}월`};
+    const has=k===1?sel<=0:k===0?true:(m>=0||flows.some(f=>f.month===keyOf(b+m)));
+    return {k,m,v,has,est:k===1&&sel===0,label:`${(b+m)%12+1}월`};
   });
   const mx=Math.max(...items4.filter(x=>x.has).map(x=>x.v),0);
   const Hc=58,Hmax=88,base=126;
