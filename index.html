@@ -324,10 +324,34 @@ function detailHtml(i){
   }else h=tx('계좌명','name',i.name)+nu('금액','amount',i.amount,0);
   return `<div class="detail${editing?' edit':''}">${h}<div class="da"><button type="button" class="ib${editing?' on':''}" data-act="edit" aria-label="수정">${ICON_EDIT}</button><button type="button" class="ib dl2" data-act="del" aria-label="삭제">${ICON_DEL}</button></div></div>`;
 }
+const FIELDS=['type','name','amount','cur','ticker','price','qty'];
+const pickF=o=>{const f={};FIELDS.forEach(k=>{if(o[k]!==undefined)f[k]=o[k]});return f};
+// asset state at month key K (assets persist until deleted; edits apply from their month on)
+function snapAt(it,K){
+  if(it.month&&K<it.month)return null;
+  if(it.end&&K>=it.end)return null;
+  for(const h of it.hist||[])if(K>=h.from&&K<h.to)return {id:it.id,month:it.month,...h.f};
+  return {id:it.id,month:it.month,...pickF(it)};
+}
+const itemsAt=m=>{const K=keyOf(baseM()+m);return items.map(i=>snapAt(i,K)).filter(Boolean)};
+function editAssetFrom(it,f,Y){
+  const start=it.from||it.month||'0000-00',old=it.hist||[];
+  const hist=old.filter(h=>h.from<Y).map(h=>h.to>Y?{from:h.from,to:Y,f:h.f}:h);
+  const covered=old.some(h=>h.from<Y&&h.to>Y);
+  if(!covered&&start<Y)hist.push({from:start,to:Y,f:pickF(it)});
+  FIELDS.forEach(k=>delete it[k]);
+  Object.assign(it,pickF(f));
+  it.from=Y;
+  if(hist.length)it.hist=hist;else delete it.hist;
+}
+function deleteAssetAt(it,Y){
+  if(it.month&&Y<=it.month)items=items.filter(v=>v.id!==it.id);
+  else it.end=Y;
+}
 const mIdx=k=>{const [y,mm]=String(k).split('-').map(Number);return y*12+mm-1};
 function build(m){
   const fl=viewFlows(m),add={},orphan=[],exp=[];let orphanOut=0;
-  const its=items.filter(i=>!i.month||mIdx(i.month)<=baseM()+m);
+  const its=itemsAt(m);
   const ok=id=>its.some(i=>i.id===id&&i.type!=='sec');
   const nm=id=>(items.find(i=>i.id===id)||{}).name||'';
   fl.forEach(f=>{
@@ -469,7 +493,7 @@ function renderIncome(){
   $('#cmlabel').textContent=`${Math.floor(M/12)}년 ${M%12+1}월`;
   {
     const rk=keyOf(baseM());
-    const as=items.filter(x=>(x.month||rk)===key).sort((a,b)=>krw(b)-krw(a));
+    const as=items.filter(x=>(x.month||rk)===key).map(x=>snapAt(x,key)||x).sort((a,b)=>krw(b)-krw(a));
     const rows=[...as.map(x=>`<div class="row" data-aid="${x.id}">${rowHtml(x)}</div>`),...[...ins,...outs].map(x=>`<div class="row" data-fid="${x.fid}">${rowHtml(x)}</div>`)];
     $('#clist').innerHTML=rows.length?rows.join(''):'<div class="cemp">데이터가 없습니다</div>';
   }
@@ -628,8 +652,8 @@ function renderPop(){
 function openEntry(kind,id){
   ent=blankEnt();
   if(id&&kind==='asset'){
-    const a=items.find(v=>v.id===id);
-    if(a)Object.assign(ent,{id,src:'asset',month:a.month||null,kind:'asset',atype:a.type,name:a.name,
+    const raw=items.find(v=>v.id===id),a=raw?(snapAt(raw,popKey())||raw):null;
+    if(a)Object.assign(ent,{id,src:'asset',month:raw.month||null,kind:'asset',atype:a.type,name:a.name,
       cur:a.type==='fx'?a.cur:'USD',scur:a.type==='sec'?a.cur:'KRW',
       amount:a.amount!=null?fmtN(a.amount,a.type==='fx'&&a.cur!=='JPY'?2:0):'',
       ticker:a.ticker||'',price:a.price!=null?fmtN(a.price,2):'',qty:a.qty!=null?fmtN(a.qty,4):''});
@@ -650,7 +674,7 @@ $('#xbody').addEventListener('change',e=>{if(e.target.id==='icur'){syncEnt();ren
 $('#scrim').addEventListener('pointerdown',e=>{e.preventDefault();closeFlow()});
 function commitAll(){ls.set('assets',items);ls.set('flows',flows);render();push();closeFlow()}
 function dropOriginal(){
-  if(ent.src==='asset')items=items.filter(v=>v.id!==ent.id);
+  if(ent.src==='asset'){const it=items.find(v=>v.id===ent.id);if(it)deleteAssetAt(it,popKey())}
   else if(ent.src==='flow')flows=flows.filter(v=>v.id!==ent.id);
 }
 $('#idel').onclick=()=>{if(!ent||!ent.id)return;dropOriginal();commitAll()};
@@ -670,17 +694,17 @@ $('#iform').onsubmit=e=>{
       if(t==='fx')obj={id,type:'fx',name,cur:ent.cur,amount:ent.cur==='JPY'?Math.round(a):Math.round(a*100)/100};
       else obj={id,type:t,name,amount:Math.round(a)};
     }
-    if(ent.src==='asset'){if(ent.month)obj.month=ent.month}else obj.month=ent.month||popKey();
-    const idx=ent.src==='asset'?items.findIndex(v=>v.id===ent.id):-1;
+    const cur=ent.src==='asset'?items.find(v=>v.id===ent.id):null;
     if(ent.src==='flow')flows=flows.filter(v=>v.id!==ent.id);
-    if(idx>=0)items[idx]=obj;else items.push(obj);
+    if(cur)editAssetFrom(cur,obj,popKey());
+    else{const mk=ent.month||popKey();items.push({...obj,month:mk,from:mk})}
   }else{
     const amount=Math.round(n(ent.amount));if(isNaN(amount)||amount<=0)return;
     const obj={id,kind:ent.kind,name,amount,month:ent.month||popKey()};
     const old=ent.src==='flow'?flows.find(v=>v.id===ent.id):null;
     if(old&&old.acct)obj.acct=old.acct;
     const idx=old?flows.findIndex(v=>v.id===ent.id):-1;
-    if(ent.src==='asset')items=items.filter(v=>v.id!==ent.id);
+    if(ent.src==='asset'){const it=items.find(v=>v.id===ent.id);if(it)deleteAssetAt(it,popKey())}
     if(idx>=0)flows[idx]=obj;else flows.push(obj);
   }
   commitAll();
@@ -779,7 +803,7 @@ document.addEventListener('pointermove',e=>{
 document.addEventListener('pointerup',()=>{
   if(dr){
     const ids=dr.all.map(x=>x.dataset.id),mv=ids.splice(dr.d,1)[0];ids.splice(dr.t,0,mv);
-    items=ids.map(id=>items.find(v=>v.id===id));
+    {const set=new Set(ids),q=ids.map(id=>items.find(v=>v.id===id));let kq=0;items=items.map(it=>set.has(it.id)?q[kq++]:it)}
     dr=null;st=null;save();return;
   }
   if(st){const row=st.row;endPress();st=null;if(!flowOpen())openEntry('asset',row.dataset.id)}
