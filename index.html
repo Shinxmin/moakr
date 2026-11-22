@@ -113,7 +113,7 @@ input:focus,select:focus{border-color:var(--primary)}
 nav.exp{height:var(--xh,52px);border-radius:28px}
 nav.exp .tabs{opacity:0;pointer-events:none}
 .xf{position:absolute;left:0;right:0;bottom:0;padding:12px;opacity:0;pointer-events:none;transition:opacity .15s}
-nav.exp .xf{opacity:1;pointer-events:auto;transition:opacity .25s .12s}
+nav.exp.m-flow #iform,nav.exp.m-name #nform{opacity:1;pointer-events:auto;transition:opacity .25s .12s}
 .xr{display:flex;gap:8px;align-items:center;margin-bottom:8px}
 .xr:last-child{margin-bottom:0}
 .xr input{flex:1;min-width:0}
@@ -203,7 +203,8 @@ nav .tabs span{font-size:10px;font-weight:600;line-height:1}
   <button class="on" data-i="0"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg><span>자산</span></button>
   <button data-i="1"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10.5h18M7 15h4"/></svg><span>소비</span></button>
   <button data-i="2"><svg viewBox="0 0 24 24"><path d="M5 20v-8M12 20V5M19 20v-5"/></svg><span>통계</span></button>
-</div><form class="xf" id="iform" autocomplete="off">
+</div><form class="xf" id="nform" autocomplete="off"><div class="xr"><input id="nmin" placeholder="이름" maxlength="20" required><button type="submit" class="xok">저장</button></div></form>
+<form class="xf" id="iform" autocomplete="off">
   <div class="xr"><div class="seg-t" id="ktypes"><button type="button" data-k="in" class="on">소득</button><button type="button" data-k="out">지출</button></div><button type="button" class="xi hide" id="idel" aria-label="삭제"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 11v6M14 11v6M6 7l1 12h10l1-12M9 7V4h6v3"/></svg></button></div>
   <label class="f"><input id="iname" placeholder="이름" required maxlength="30"></label>
   <div class="xr"><input id="iamt" placeholder="금액" inputmode="numeric" required><button type="submit" class="xok">저장</button></div>
@@ -485,15 +486,18 @@ $('#qty').addEventListener('input',()=>reAmt($('#qty'),true));
 // profile name
 const nmEl=$('#nm');
 nmEl.textContent=ls.get('name','사용자');
-nmEl.addEventListener('click',()=>{if(nmEl.isContentEditable)return;nmEl.classList.add('editing');nmEl.contentEditable='plaintext-only';nmEl.focus();const g=getSelection(),rg=document.createRange();rg.selectNodeContents(nmEl);g.removeAllRanges();g.addRange(rg)});
-nmEl.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();nmEl.blur()}});
-nmEl.addEventListener('input',()=>{if(nmEl.textContent.length>20)nmEl.textContent=nmEl.textContent.slice(0,20)});
-nmEl.addEventListener('blur',()=>{
-  nmEl.contentEditable='false';nmEl.classList.remove('editing');
-  const v=nmEl.textContent.trim();
-  if(v){ls.set('name',v);push()}else nmEl.textContent=ls.get('name','사용자');
-  getSelection().removeAllRanges();
+nmEl.addEventListener('click',()=>{
+  if(flowOpen())return;
+  $('#nmin').value=ls.get('name','사용자');
+  $('#dock').classList.add('exp');$('#scrim').classList.add('on');
+  const nv=$('#nav');nv.classList.add('exp','m-name');nv.style.setProperty('--xh',$('#nform').offsetHeight+'px');
+  setTimeout(()=>{const i=$('#nmin');i.focus();i.setSelectionRange(i.value.length,i.value.length)},380);
 });
+$('#nform').onsubmit=e=>{
+  e.preventDefault();
+  const v=$('#nmin').value.trim();if(!v)return;
+  ls.set('name',v);nmEl.textContent=v;push();closeFlow();
+};
 
 // disable copy / cut / paste / context menu / drag
 ['copy','cut','paste','contextmenu','dragstart'].forEach(t=>document.addEventListener(t,e=>e.preventDefault()));
@@ -537,7 +541,7 @@ function openModal(id){
   setTimeout(()=>$('#name').focus(),50);
 }
 const closeModal=()=>{$('#ov').classList.remove('open');closeFlow()};
-function closeFlow(){$('#nav').classList.remove('exp');$('#dock').classList.remove('exp');$('#scrim').classList.remove('on');document.activeElement&&document.activeElement.blur&&document.activeElement.blur()}
+function closeFlow(){$('#nav').classList.remove('exp','m-flow','m-name');$('#dock').classList.remove('exp');$('#scrim').classList.remove('on');document.activeElement&&document.activeElement.blur&&document.activeElement.blur()}
 const flowOpen=()=>$('#nav').classList.contains('exp');
 $('#add').onclick=()=>{if(flowOpen()){closeFlow();return}if(tab===0)openModal();else openFlow()};
 let iEdit=null,fKind='in';
@@ -550,7 +554,7 @@ function openFlow(id){
   $('#iamt').value=f?fmtAmt(String(f.amount),false):'';
   $('#idel').classList.toggle('hide',!f);
   $('#dock').classList.add('exp');$('#scrim').classList.add('on');
-  const nv=$('#nav');nv.classList.add('exp');nv.style.setProperty('--xh',$('#iform').offsetHeight+'px');
+  const nv=$('#nav');nv.classList.add('exp','m-flow');nv.style.setProperty('--xh',$('#iform').offsetHeight+'px');
   setTimeout(()=>$('#iname').focus(),380);
 }
 $('#scrim').addEventListener('pointerdown',e=>{e.preventDefault();closeFlow()});
@@ -690,7 +694,7 @@ function push(){clearTimeout(pushT);pushT=setTimeout(()=>{pushT=null;rpc('moakr_
 async function pull(){
   try{
     const d=await rpc('moakr_get',{k:SK});
-    if(pushT||dr||editing||$('#ov').classList.contains('open')||flowOpen()||nmEl.isContentEditable)return;
+    if(pushT||dr||editing||$('#ov').classList.contains('open')||flowOpen())return;
     if(d&&Array.isArray(d.items)){
       if(JSON.stringify(d.items)!==JSON.stringify(items)){items=d.items;ls.set('assets',items);render()}
       if(Array.isArray(d.flows)&&JSON.stringify(d.flows)!==JSON.stringify(flows)){flows=d.flows;ls.set('flows',flows);render()}
