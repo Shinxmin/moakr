@@ -120,8 +120,10 @@ nav.exp.m-flow #iform,nav.exp.m-name #nform{opacity:1;pointer-events:auto;transi
 .xf .f{margin:0 0 8px}
 .xf input{padding:11px 12px;border-radius:12px}
 .xf input:focus{border-color:var(--line)}
-.xf .seg-t{flex:none;width:50%;margin:0;padding:3px;border-radius:12px}
+.xf .seg-t{flex:none;width:72%;margin:0;padding:3px;border-radius:12px}
 .xf .seg-t button{padding:7px 0;font-size:13px;border-radius:9px}
+.xf #atypes{width:100%}
+.xr select{flex:none;width:68px;padding:11px 6px;border-radius:12px;text-align:center;text-align-last:center}
 .xi{flex:none;margin-left:auto;width:36px;height:36px;border:0;border-radius:12px;background:var(--field);color:var(--sub);display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
 .xi svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .xok{flex:none;height:42px;padding:0 16px;border:0;border-radius:12px;background:var(--sub);color:var(--bg);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
@@ -210,13 +212,13 @@ nav .tabs span{font-size:10px;font-weight:600;line-height:1}
 <div id="scrim"></div>
 <div class="dock" id="dock"><nav id="nav"><div class="tabs" id="tabs"><i class="ind" id="ind"></i>
   <button class="on" data-i="0"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg><span>자산</span></button>
-  <button data-i="1"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10.5h18M7 15h4"/></svg><span>소비</span></button>
+  <button data-i="1"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10.5h18M7 15h4"/></svg><span>기록</span></button>
   <button data-i="2"><svg viewBox="0 0 24 24"><path d="M5 20v-8M12 20V5M19 20v-5"/></svg><span>통계</span></button>
 </div><form class="xf" id="nform" autocomplete="off"><div class="xr"><input id="nmin" placeholder="이름" maxlength="20" required><button type="submit" class="xok">저장</button></div></form>
 <form class="xf" id="iform" autocomplete="off">
-  <div class="xr"><div class="seg-t" id="ktypes"><button type="button" data-k="in" class="on">소득</button><button type="button" data-k="out">지출</button></div><button type="button" class="xi hide" id="idel" aria-label="삭제"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 11v6M14 11v6M6 7l1 12h10l1-12M9 7V4h6v3"/></svg></button></div>
-  <label class="f"><input id="iname" placeholder="이름" required maxlength="30"></label>
-  <div class="xr"><input id="iamt" placeholder="금액" inputmode="numeric" required><button type="submit" class="xok">저장</button></div>
+  <div class="xr"><div class="seg-t" id="ktypes"><button type="button" data-k="asset" class="on">자산</button><button type="button" data-k="in">소득</button><button type="button" data-k="out">지출</button></div><button type="button" class="xi hide" id="idel" aria-label="삭제"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 11v6M14 11v6M6 7l1 12h10l1-12M9 7V4h6v3"/></svg></button></div>
+  <div class="xr" id="arow"><div class="seg-t" id="atypes"><button type="button" data-a="cash" class="on">입출금</button><button type="button" data-a="fx">외화</button><button type="button" data-a="save">예적금</button><button type="button" data-a="sec">증권</button></div></div>
+  <div id="xbody"></div>
 </form></nav><button class="add" id="add" aria-label="추가"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M9 3v12M3 9h12"/></svg></button></div>
 <div id="tip"></div>
 <div class="ov" id="ov"><form class="modal" id="form" autocomplete="off">
@@ -256,7 +258,7 @@ const fmtN=(n,d)=>Number(n).toLocaleString('ko-KR',{maximumFractionDigits:d});
 const krw=i=>i.type==='sec'?i.price*i.qty*(i.cur==='USD'?(rates.USD||0):1):i.type==='fx'?i.amount*(rates[i.cur]||0):i.amount;
 const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const main=i=>i.type==='sec'?'₩'+fmt(Math.round(krw(i))):i.type==='out'?'-₩'+fmt(i.amount):i.type==='in'?'+₩'+fmt(i.amount):i.type==='fx'?CURS[i.cur]+fmt(i.amount,i.cur==='JPY'?0:2):(i.amount<0?'-':'')+'₩'+fmt(Math.abs(i.amount));
+const main=i=>i.type==='sec'?'₩'+fmt(Math.round(krw(i))):i.type==='out'||i.type==='in'?'₩'+fmt(i.amount):i.type==='fx'?CURS[i.cur]+fmt(i.amount,i.cur==='JPY'?0:2):(i.amount<0?'-':'')+'₩'+fmt(Math.abs(i.amount));
 const sub=i=>i.note?i.note:(i.type==='sec'?`${i.ticker} ${fmtN(i.qty,4)}주`:i.type==='fx'&&rates[i.cur]?'₩'+fmt(Math.round(krw(i))):'');
 const pill=t=>`<span class="pill t-${t}">${LBL[t]}</span>`;
 
@@ -322,9 +324,11 @@ function detailHtml(i){
   }else h=tx('계좌명','name',i.name)+nu('금액','amount',i.amount,0);
   return `<div class="detail${editing?' edit':''}">${h}<div class="da"><button type="button" class="ib${editing?' on':''}" data-act="edit" aria-label="수정">${ICON_EDIT}</button><button type="button" class="ib dl2" data-act="del" aria-label="삭제">${ICON_DEL}</button></div></div>`;
 }
+const mIdx=k=>{const [y,mm]=String(k).split('-').map(Number);return y*12+mm-1};
 function build(m){
   const fl=viewFlows(m),add={},orphan=[],exp=[];let orphanOut=0;
-  const ok=id=>items.some(i=>i.id===id&&i.type!=='sec');
+  const its=items.filter(i=>!i.month||mIdx(i.month)<=baseM()+m);
+  const ok=id=>its.some(i=>i.id===id&&i.type!=='sec');
   const nm=id=>(items.find(i=>i.id===id)||{}).name||'';
   fl.forEach(f=>{
     if(f.kind==='in'){
@@ -335,7 +339,7 @@ function build(m){
       if(ok(f.acct))add[f.acct]=(add[f.acct]||0)-f.amount;else orphanOut+=f.amount;
     }
   });
-  const vi=items.map(i=>{
+  const vi=its.map(i=>{
     const a=add[i.id];if(!a)return i;
     if(i.type!=='fx')return {...i,amount:i.amount+a};
     const r=rates[i.cur];return r?{...i,amount:Math.round((i.amount+a/r)*100)/100}:i;
@@ -418,16 +422,18 @@ function flowNet(M){
 }
 function totalAt(m){
   const b=baseM();
-  return m>=-1?build(m).net:totalAt(m+1)-flowNet(b+m+1);
+  if(m>=0)return build(m).net;
+  let t=build(m).net;
+  for(let j=m+1;j<=-1;j++)t-=flowNet(b+j);
+  return t;
 }
 const fmtMan=v=>{const m=Math.round(v/10000);return (m<0?'-':'')+fmt(Math.abs(m))+'만원'};
 function renderTrend(){
   const b=baseM(),sel=imo;
   const items4=[-2,-1,0,1].map(k=>{
     const m=sel+k,v=totalAt(m);
-    const rec=m>=0||flows.some(f=>f.month===keyOf(b+m));
-    const has=k===1&&sel>0?false:rec;
-    return {k,m,v,has,est:k===1&&sel===0,label:`${(b+m)%12+1}월`};
+    const rec=m>=0||flows.some(f=>f.month===keyOf(b+m))||items.some(i=>i.month===keyOf(b+m));
+    return {k,m,v,has:rec,est:m>0,label:`${(b+m)%12+1}월`};
   });
   const ctr=items4[2],ref=ctr.has?ctr.v:0;
   const mx=Math.max(...items4.filter(x=>x.has).map(x=>x.v),0);
@@ -440,8 +446,8 @@ function renderTrend(){
     if(!x.has){bh=8;fill='var(--bg)';ex=' stroke="var(--mute)" stroke-width="1.2" stroke-dasharray="1.5 2.5"'}
     else{
       bh=x.v>0?Math.min(Hmax,Math.max(3,x.v*sc)):3;
-      fill=x.k===0?'var(--sub)':x.est?'color-mix(in srgb,var(--mute) 22%,var(--bg))':'color-mix(in srgb,var(--mute) 45%,var(--bg))';
-      if(x.est)ex=' stroke="var(--mute)" stroke-width="1.2" stroke-dasharray="3 2.5"';
+      fill=x.est?(x.k===0?'color-mix(in srgb,var(--mute) 42%,var(--bg))':'color-mix(in srgb,var(--mute) 22%,var(--bg))'):x.k===0?'var(--sub)':'color-mix(in srgb,var(--mute) 45%,var(--bg))';
+      if(x.est)ex=` stroke="${x.k===0?'var(--sub)':'var(--mute)'}" stroke-width="1.2" stroke-dasharray="3 2.5"`;
       const y=base-bh-5;
       txt=`<text x="${cx}" y="${x.est?y-10:y}" text-anchor="middle" style="font-size:9px;font-weight:600;fill:var(--fg)">${fmtMan(x.v)}</text>`
         +(x.est?`<text x="${cx}" y="${y}" text-anchor="middle" style="font-size:8px;fill:var(--mute)">(예상)</text>`:'');
@@ -461,7 +467,12 @@ function renderIncome(){
   {const bal=I-E,w=n=>(n<0?'-':'')+'₩'+fmt(Math.abs(n));
   $('#idelta').innerHTML=`<div class="srs"><div class="sr inc"><i class="dt" style="background:var(--c-in)"></i><span>소득</span><span>${w(I)}</span></div><div class="sr"><i class="dt" style="background:var(--c-out)"></i><span>지출</span><span>${w(E)}</span></div><div class="sr"><i class="dt" style="background:var(--mute)"></i><span>잔액</span><span>${w(bal)}</span></div></div>`;}
   $('#cmlabel').textContent=`${Math.floor(M/12)}년 ${M%12+1}월`;
-  $('#clist').innerHTML=(ins.length||outs.length)?[...ins,...outs].map(i=>`<div class="row${i.type==='out'?' ex':''}" data-fid="${i.fid}">${rowHtml(i)}</div>`).join(''):'<div class="cemp">데이터가 없습니다</div>';
+  {
+    const rk=keyOf(baseM());
+    const as=items.filter(x=>(x.month||rk)===key).sort((a,b)=>krw(b)-krw(a));
+    const rows=[...as.map(x=>`<div class="row" data-aid="${x.id}">${rowHtml(x)}</div>`),...[...ins,...outs].map(x=>`<div class="row" data-fid="${x.fid}">${rowHtml(x)}</div>`)];
+    $('#clist').innerHTML=rows.length?rows.join(''):'<div class="cemp">데이터가 없습니다</div>';
+  }
   $('#imlabel').textContent=`${Math.floor(M/12)}년 ${M%12+1}월`;
   renderTrend();
   $('#sk').classList.toggle('empty',!(I||E));
@@ -471,7 +482,7 @@ $('#mp').onclick=()=>{mo=Math.max(mo-1,-12);hideTip();render()};
 $('#mn').onclick=()=>{mo=Math.min(mo+1,60);hideTip();render()};
 $('#cmp').onclick=()=>{imo=Math.max(imo-1,-12);hideTip();renderIncome()};
 $('#cmn').onclick=()=>{imo=Math.min(imo+1,60);hideTip();renderIncome()};
-$('#clist').addEventListener('click',e=>{const row=e.target.closest('.row[data-fid]');if(row)openFlow(row.dataset.fid)});
+$('#clist').addEventListener('click',e=>{const a=e.target.closest('.row[data-aid]');if(a){openEntry('asset',a.dataset.aid);return}const f=e.target.closest('.row[data-fid]');if(f)openFlow(f.dataset.fid)});
 $('#imp').onclick=()=>{imo=Math.max(imo-1,-12);hideTip();renderIncome()};
 $('#imn').onclick=()=>{imo=Math.min(imo+1,60);hideTip();renderIncome()};
 
@@ -523,7 +534,6 @@ function reAmt(el=amtEl,dec=decOk()){
   try{el.setSelectionRange(k,k)}catch{}
 }
 amtEl.addEventListener('input',()=>reAmt());
-$('#iamt').addEventListener('input',()=>reAmt($('#iamt'),false));
 $('#cur').addEventListener('change',()=>reAmt());
 $('#price').addEventListener('input',()=>reAmt($('#price'),true));
 $('#qty').addEventListener('input',()=>reAmt($('#qty'),true));
@@ -586,29 +596,94 @@ function openModal(id){
 const closeModal=()=>{$('#ov').classList.remove('open');closeFlow()};
 function closeFlow(){$('#nav').classList.remove('exp','m-flow','m-name');$('#dock').classList.remove('exp');$('#scrim').classList.remove('on');document.activeElement&&document.activeElement.blur&&document.activeElement.blur()}
 const flowOpen=()=>$('#nav').classList.contains('exp');
-$('#add').onclick=()=>{if(flowOpen()){closeFlow();return}if(tab===0)openModal();else openFlow()};
-let iEdit=null,fKind='in';
-const setKind=k=>{fKind=k;document.querySelectorAll('#ktypes button').forEach(b=>b.classList.toggle('on',b.dataset.k===k))};
-$('#ktypes').onclick=e=>{const b=e.target.closest('button');if(b)setKind(b.dataset.k)};
-function openFlow(id){
-  iEdit=id||null;const f=flows.find(v=>v.id===id);
-  setKind(f?f.kind:'in');
-  $('#iname').value=f?f.name:'';
-  $('#iamt').value=f?fmtAmt(String(f.amount),false):'';
-  $('#idel').classList.toggle('hide',!f);
-  $('#dock').classList.add('exp');$('#scrim').classList.add('on');
-  const nv=$('#nav');nv.classList.add('exp','m-flow');nv.style.setProperty('--xh',$('#iform').offsetHeight+'px');
-  setTimeout(()=>$('#iname').focus(),380);
+$('#add').onclick=()=>{if(flowOpen()){closeFlow();return}openEntry('asset')};
+// unified entry popup (자산 / 소득 / 지출) on the expanding dock
+const popKey=()=>keyOf(baseM()+(tab===0?mo:imo));
+let ent=null;
+const blankEnt=()=>({src:null,id:null,month:null,kind:'asset',atype:'cash',name:'',amount:'',cur:'USD',ticker:'',price:'',qty:'',scur:'KRW'});
+function syncEnt(){
+  const map={iname:'name',iamt:'amount',iticker:'ticker',iprice:'price',iqty:'qty',icur:'cur',iscur:'scur'};
+  Object.entries(map).forEach(([id,k])=>{const e=$('#'+id);if(e)ent[k]=e.value});
 }
+function bodyHtml(){
+  const e=ent,v=x=>esc(String(x==null?'':x));
+  const save='<button type="submit" class="xok">저장</button>';
+  const name=`<input id="iname" placeholder="${e.kind==='asset'&&e.atype==='sec'?'계좌명':'이름'}" maxlength="30" value="${v(e.name)}">`;
+  const amt=d=>`<input id="iamt" placeholder="금액" inputmode="decimal" data-d="${d}" value="${v(e.amount)}">`;
+  if(e.kind==='asset'&&e.atype==='sec')
+    return `<label class="f">${name}</label><div class="xr"><input id="iticker" placeholder="종목" maxlength="30" value="${v(e.ticker)}"><select id="iscur"><option value="KRW"${e.scur==='KRW'?' selected':''}>원</option><option value="USD"${e.scur==='USD'?' selected':''}>달러</option></select></div><div class="xr"><input id="iprice" placeholder="평단가" inputmode="decimal" data-d="2" value="${v(e.price)}"><input id="iqty" placeholder="수량" inputmode="decimal" data-d="4" value="${v(e.qty)}"></div><div class="xr">${save}</div>`;
+  if(e.kind==='asset'&&e.atype==='fx')
+    return `<div class="xr">${name}<select id="icur">${Object.keys(CURS).map(c=>`<option${c===e.cur?' selected':''}>${c}</option>`).join('')}</select></div><div class="xr">${amt(e.cur==='JPY'?0:2)}${save}</div>`;
+  return `<label class="f">${name}</label><div class="xr">${amt(0)}${save}</div>`;
+}
+function layoutPop(){$('#nav').style.setProperty('--xh',$('#iform').offsetHeight+'px')}
+function renderPop(){
+  document.querySelectorAll('#ktypes button').forEach(b=>b.classList.toggle('on',b.dataset.k===ent.kind));
+  document.querySelectorAll('#atypes button').forEach(b=>b.classList.toggle('on',b.dataset.a===ent.atype));
+  $('#arow').classList.toggle('hide',ent.kind!=='asset');
+  $('#xbody').innerHTML=bodyHtml();
+  $('#idel').classList.toggle('hide',!ent.id);
+  layoutPop();
+}
+function openEntry(kind,id){
+  ent=blankEnt();
+  if(id&&kind==='asset'){
+    const a=items.find(v=>v.id===id);
+    if(a)Object.assign(ent,{id,src:'asset',month:a.month||null,kind:'asset',atype:a.type,name:a.name,
+      cur:a.type==='fx'?a.cur:'USD',scur:a.type==='sec'?a.cur:'KRW',
+      amount:a.amount!=null?fmtN(a.amount,a.type==='fx'&&a.cur!=='JPY'?2:0):'',
+      ticker:a.ticker||'',price:a.price!=null?fmtN(a.price,2):'',qty:a.qty!=null?fmtN(a.qty,4):''});
+  }else if(id){
+    const f=flows.find(v=>v.id===id);
+    if(f)Object.assign(ent,{id,src:'flow',month:f.month,kind:f.kind,name:f.name,amount:fmtN(f.amount,0)});
+  }
+  renderPop();
+  $('#dock').classList.add('exp');$('#scrim').classList.add('on');
+  $('#nav').classList.add('exp','m-flow');layoutPop();
+  setTimeout(()=>$('#iname')&&$('#iname').focus(),380);
+}
+const openFlow=id=>{const f=flows.find(v=>v.id===id);openEntry(f?f.kind:'in',id)};
+$('#ktypes').onclick=e=>{const b=e.target.closest('button');if(!b)return;syncEnt();ent.kind=b.dataset.k;renderPop()};
+$('#atypes').onclick=e=>{const b=e.target.closest('button');if(!b)return;syncEnt();ent.atype=b.dataset.a;renderPop()};
+$('#xbody').addEventListener('input',e=>{const t=e.target;if(t.dataset&&t.dataset.d!==undefined)reAmt(t,t.dataset.d!=='0')});
+$('#xbody').addEventListener('change',e=>{if(e.target.id==='icur'){syncEnt();renderPop()}});
 $('#scrim').addEventListener('pointerdown',e=>{e.preventDefault();closeFlow()});
-$('#idel').onclick=()=>{flows=flows.filter(v=>v.id!==iEdit);saveFlows();closeFlow()};
+function commitAll(){ls.set('assets',items);ls.set('flows',flows);render();push();closeFlow()}
+function dropOriginal(){
+  if(ent.src==='asset')items=items.filter(v=>v.id!==ent.id);
+  else if(ent.src==='flow')flows=flows.filter(v=>v.id!==ent.id);
+}
+$('#idel').onclick=()=>{if(!ent||!ent.id)return;dropOriginal();commitAll()};
 $('#iform').onsubmit=e=>{
-  e.preventDefault();
-  const amount=parseInt($('#iamt').value.replace(/,/g,''),10),name=$('#iname').value.trim();
-  if(!name||isNaN(amount)||amount<=0)return;
-  if(iEdit)flows=flows.map(v=>v.id===iEdit?{...v,name,amount,kind:fKind}:v);
-  else flows.push({id:String(Date.now()),kind:fKind,name,amount,month:keyOf(baseM()+imo)});
-  saveFlows();closeFlow();
+  e.preventDefault();syncEnt();
+  const n=s=>parseFloat(String(s).replace(/,/g,''));
+  const name=ent.name.trim();if(!name)return;
+  const id=ent.id||String(Date.now());
+  if(ent.kind==='asset'){
+    const t=ent.atype;let obj;
+    if(t==='sec'){
+      const ticker=ent.ticker.trim(),price=n(ent.price),qty=n(ent.qty);
+      if(!ticker||isNaN(price)||price<0||isNaN(qty)||qty<=0)return;
+      obj={id,type:'sec',name,ticker,price,qty,cur:ent.scur};
+    }else{
+      let a=n(ent.amount);if(isNaN(a)||a<0)return;
+      if(t==='fx')obj={id,type:'fx',name,cur:ent.cur,amount:ent.cur==='JPY'?Math.round(a):Math.round(a*100)/100};
+      else obj={id,type:t,name,amount:Math.round(a)};
+    }
+    if(ent.src==='asset'){if(ent.month)obj.month=ent.month}else obj.month=ent.month||popKey();
+    const idx=ent.src==='asset'?items.findIndex(v=>v.id===ent.id):-1;
+    if(ent.src==='flow')flows=flows.filter(v=>v.id!==ent.id);
+    if(idx>=0)items[idx]=obj;else items.push(obj);
+  }else{
+    const amount=Math.round(n(ent.amount));if(isNaN(amount)||amount<=0)return;
+    const obj={id,kind:ent.kind,name,amount,month:ent.month||popKey()};
+    const old=ent.src==='flow'?flows.find(v=>v.id===ent.id):null;
+    if(old&&old.acct)obj.acct=old.acct;
+    const idx=old?flows.findIndex(v=>v.id===ent.id):-1;
+    if(ent.src==='asset')items=items.filter(v=>v.id!==ent.id);
+    if(idx>=0)flows[idx]=obj;else flows.push(obj);
+  }
+  commitAll();
 };
 function saveFlows(){ls.set('flows',flows);render();push()}
 $('#cancel').onclick=closeModal;
@@ -707,7 +782,7 @@ document.addEventListener('pointerup',()=>{
     items=ids.map(id=>items.find(v=>v.id===id));
     dr=null;st=null;save();return;
   }
-  if(st){const row=st.row;endPress();st=null;if(!$('#ov').classList.contains('open')){const id=row.dataset.id;openId=openId===id?null:id;editing=false;render()}}
+  if(st){const row=st.row;endPress();st=null;if(!flowOpen())openEntry('asset',row.dataset.id)}
 });
 document.addEventListener('pointercancel',()=>{endPress();if(!dr)st=null});
 document.addEventListener('touchmove',e=>{if(dr)e.preventDefault()},{passive:false});
