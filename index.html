@@ -124,6 +124,8 @@ nav.exp.m-flow #iform,nav.exp.m-name #nform{opacity:1;pointer-events:auto;transi
 .xf .seg-t button{padding:7px 0;font-size:13px;border-radius:9px}
 .xf #atypes{width:100%}
 .xr select{flex:none;width:68px;padding:11px 6px;border-radius:12px;text-align:center;text-align-last:center}
+.xr select.wide{flex:1;width:auto;min-width:0;text-align:left;text-align-last:left;padding:11px 12px}
+.xok:disabled{opacity:.35;cursor:default}
 .xi{flex:none;margin-left:auto;width:36px;height:36px;border:0;border-radius:12px;background:var(--field);color:var(--sub);display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
 .xi svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .xok{flex:none;height:42px;padding:0 16px;border:0;border-radius:12px;background:var(--sub);color:var(--bg);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
@@ -389,7 +391,7 @@ function render(keep=false){
     }
   }
   {const [y,m]=monthParts();$('#mlabel').textContent=`${y}년 ${m}월`}
-  ring($('#svg'),[...vi,...orphan]);
+  ring($('#svg'),vi);
   poolA=[...vi,...orphan,...exp];
   if(keep){
     vi.forEach(i=>{const row=$('#list').querySelector(`.row[data-id="${i.id}"]`);if(!row)return;
@@ -624,9 +626,10 @@ $('#add').onclick=()=>{if(flowOpen()){closeFlow();return}openEntry('asset')};
 // unified entry popup (자산 / 소득 / 지출) on the expanding dock
 const popKey=()=>keyOf(baseM()+(tab===0?mo:imo));
 let ent=null;
-const blankEnt=()=>({src:null,id:null,month:null,kind:'asset',atype:'cash',name:'',amount:'',cur:'USD',ticker:'',price:'',qty:'',scur:'KRW'});
+const blankEnt=()=>({src:null,id:null,month:null,kind:'asset',atype:'cash',name:'',amount:'',cur:'USD',ticker:'',price:'',qty:'',scur:'KRW',acct:''});
+const acctList=()=>itemsAt(tab===0?mo:imo).filter(i=>i.type!=='sec');
 function syncEnt(){
-  const map={iname:'name',iamt:'amount',iticker:'ticker',iprice:'price',iqty:'qty',icur:'cur',iscur:'scur'};
+  const map={iname:'name',iamt:'amount',iticker:'ticker',iprice:'price',iqty:'qty',icur:'cur',iscur:'scur',iacct:'acct'};
   Object.entries(map).forEach(([id,k])=>{const e=$('#'+id);if(e)ent[k]=e.value});
 }
 function bodyHtml(){
@@ -638,6 +641,12 @@ function bodyHtml(){
     return `<label class="f">${name}</label><div class="xr"><input id="iticker" placeholder="종목" maxlength="30" value="${v(e.ticker)}"><select id="iscur"><option value="KRW"${e.scur==='KRW'?' selected':''}>원</option><option value="USD"${e.scur==='USD'?' selected':''}>달러</option></select></div><div class="xr"><input id="iprice" placeholder="평단가" inputmode="decimal" data-d="2" value="${v(e.price)}"><input id="iqty" placeholder="수량" inputmode="decimal" data-d="4" value="${v(e.qty)}"></div><div class="xr">${save}</div>`;
   if(e.kind==='asset'&&e.atype==='fx')
     return `<div class="xr">${name}<select id="icur">${Object.keys(CURS).map(c=>`<option${c===e.cur?' selected':''}>${c}</option>`).join('')}</select></div><div class="xr">${amt(e.cur==='JPY'?0:2)}${save}</div>`;
+  if(e.kind==='in'||e.kind==='out'){
+    const L=acctList(),sel=L.some(a=>a.id===e.acct)?e.acct:(L[0]?L[0].id:'');
+    const pre=e.kind==='in'?'입금':'출금';
+    const opts=L.length?L.map(a=>`<option value="${a.id}"${a.id===sel?' selected':''}>${pre} · ${v(a.name)}</option>`).join(''):'<option value="">계좌 없음</option>';
+    return `<label class="f">${name}</label><div class="xr"><select id="iacct" class="wide">${opts}</select></div><div class="xr">${amt(0)}<button type="submit" class="xok"${L.length?'':' disabled'}>저장</button></div>`;
+  }
   return `<label class="f">${name}</label><div class="xr">${amt(0)}${save}</div>`;
 }
 function layoutPop(){$('#nav').style.setProperty('--xh',$('#iform').offsetHeight+'px')}
@@ -659,7 +668,7 @@ function openEntry(kind,id){
       ticker:a.ticker||'',price:a.price!=null?fmtN(a.price,2):'',qty:a.qty!=null?fmtN(a.qty,4):''});
   }else if(id){
     const f=flows.find(v=>v.id===id);
-    if(f)Object.assign(ent,{id,src:'flow',month:f.month,kind:f.kind,name:f.name,amount:fmtN(f.amount,0)});
+    if(f)Object.assign(ent,{id,src:'flow',month:f.month,kind:f.kind,name:f.name,amount:fmtN(f.amount,0),acct:f.acct||''});
   }
   renderPop();
   $('#dock').classList.add('exp');$('#scrim').classList.add('on');
@@ -700,9 +709,9 @@ $('#iform').onsubmit=e=>{
     else{const mk=ent.month||popKey();items.push({...obj,month:mk,from:mk})}
   }else{
     const amount=Math.round(n(ent.amount));if(isNaN(amount)||amount<=0)return;
-    const obj={id,kind:ent.kind,name,amount,month:ent.month||popKey()};
+    if(!ent.acct||!acctList().some(a=>a.id===ent.acct))return;
+    const obj={id,kind:ent.kind,name,amount,month:ent.month||popKey(),acct:ent.acct};
     const old=ent.src==='flow'?flows.find(v=>v.id===ent.id):null;
-    if(old&&old.acct)obj.acct=old.acct;
     const idx=old?flows.findIndex(v=>v.id===ent.id):-1;
     if(ent.src==='asset'){const it=items.find(v=>v.id===ent.id);if(it)deleteAssetAt(it,popKey())}
     if(idx>=0)flows[idx]=obj;else flows.push(obj);
