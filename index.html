@@ -106,11 +106,11 @@ input:focus,select:focus{border-color:var(--primary)}
 .dock{position:fixed;z-index:15;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom));width:min(calc(100% - 80px),300px);display:flex;gap:10px}
 .dock .add{width:52px;min-width:52px;height:52px;margin:0}
 .dock .add svg{width:20px;height:20px}
-nav{position:relative;flex:1;height:52px;padding:4px;display:grid;grid-template-columns:repeat(3,1fr);border-radius:26px;
+nav{position:relative;flex:1;height:52px;padding:4px;display:grid;grid-template-columns:repeat(2,1fr);border-radius:26px;
   background:linear-gradient(145deg,rgba(255,255,255,.7),rgba(255,255,255,.3));border:1px solid rgba(255,255,255,.9);
   -webkit-backdrop-filter:blur(22px) saturate(1.9);backdrop-filter:blur(22px) saturate(1.9);
   box-shadow:inset 0 1px 1px #fff,inset 0 -2px 6px rgba(0,0,0,.05),0 8px 28px rgba(0,0,0,.14),0 1px 4px rgba(0,0,0,.08)}
-nav .ind{position:absolute;top:4px;bottom:4px;left:4px;width:calc((100% - 8px)/3);border-radius:22px;background:rgba(0,0,0,.06);box-shadow:inset 0 1px 1px rgba(255,255,255,.8);transition:transform .35s cubic-bezier(.3,1.2,.4,1)}
+nav .ind{position:absolute;top:4px;bottom:4px;left:4px;width:calc((100% - 8px)/2);border-radius:22px;background:rgba(0,0,0,.06);box-shadow:inset 0 1px 1px rgba(255,255,255,.8);transition:transform .35s cubic-bezier(.3,1.2,.4,1)}
 nav button{position:relative;border:0;background:transparent;color:var(--mute);font:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;padding:0;transition:color .2s}
 nav button.on{color:var(--fg)}
 nav svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
@@ -129,6 +129,14 @@ nav span{font-size:10px;font-weight:600;line-height:1}
 .ib.on{background:var(--primary);color:#fff}
 .ib.dl2{color:#f04452}
 .secf{margin-bottom:0}
+.sp{text-align:center}
+.sp .mo{position:static}
+.sp b{display:block;margin-top:12px;font-size:24px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.sp .dl{margin-top:6px}
+.sk{margin-top:22px}
+.sk svg{width:100%;display:block;overflow:visible;touch-action:pan-y}
+.sn{cursor:pointer}
+.t-rest{--pc:var(--mute)}
 </style>
 </head>
 <body>
@@ -143,23 +151,24 @@ nav span{font-size:10px;font-weight:600;line-height:1}
   <div class="card list" id="list"></div>
 </div>
 <div class="view" id="v-1">
-  <div class="card chart-card"><div class="chart" id="ichart">
-    <svg viewBox="0 0 200 200" id="isvg"></svg>
-    <div class="center"><div class="mo"><button id="imp" aria-label="이전 달"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><span id="imlabel"></span><button id="imn" aria-label="다음 달"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button></div><b id="itotal">₩0</b></div>
-  </div></div>
+  <div class="card chart-card sp">
+    <div class="mo"><button id="imp" aria-label="이전 달"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><span id="imlabel"></span><button id="imn" aria-label="다음 달"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button></div>
+    <b id="itotal">₩0</b>
+    <div class="dl" id="idelta"></div>
+    <div class="sk"><svg id="isvg" viewBox="0 0 360 1"></svg></div>
+  </div>
   <div class="card list" id="ilist"></div>
 </div>
-<div class="view" id="v-2"></div>
 </main>
 <div class="dock"><nav id="nav"><i class="ind" id="ind"></i>
   <button class="on" data-i="0"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg><span>자산</span></button>
-  <button data-i="1"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></svg><span>수입</span></button>
-  <button data-i="2"><svg viewBox="0 0 24 24"><path d="M12 15V4M7 8.5l5-5 5 5M5 20h14"/></svg><span>지출</span></button>
+  <button data-i="1"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10.5h18M7 15h4"/></svg><span>소비</span></button>
 </nav><button class="add" id="add" aria-label="추가"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M9 3v12M3 9h12"/></svg></button></div>
 <div id="tip"></div>
 <div class="ov" id="ov2"><form class="modal" id="iform" autocomplete="off">
-  <h2 id="imt">수입 추가</h2>
-  <label class="f"><input id="iname" placeholder="수입명" required maxlength="30"></label>
+  <h2 id="imt">내역 추가</h2>
+  <div class="seg-t" id="ktypes"><button type="button" data-k="in" class="on">수입</button><button type="button" data-k="out">지출</button></div>
+  <label class="f"><input id="iname" placeholder="내역명" required maxlength="30"></label>
   <label class="f"><input id="iamt" placeholder="금액" inputmode="numeric" required></label>
   <label class="f"><select id="iacct" required></select></label>
   <div class="btns">
@@ -191,7 +200,7 @@ nav span{font-size:10px;font-weight:600;line-height:1}
 const TYPES={cash:'입출금',fx:'외화',save:'예적금',sec:'증권'};
 const CURS={USD:'$',JPY:'¥',CNY:'CN¥'};
 const COLORS={cash:'--c-cash',fx:'--c-fx',save:'--c-save',in:'--c-in',out:'--c-out',sec:'--c-sec'};
-const LBL={cash:'입출금',fx:'외화',save:'예적금',in:'수입',out:'지출',sec:'증권'};
+const LBL={cash:'입출금',fx:'외화',save:'예적금',in:'수입',out:'지출',sec:'증권',rest:'잔액'};
 const $=s=>document.querySelector(s);
 const ls={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
 let items=ls.get('assets',[]);
@@ -205,7 +214,7 @@ const fmtN=(n,d)=>Number(n).toLocaleString('ko-KR',{maximumFractionDigits:d});
 const krw=i=>i.type==='sec'?i.price*i.qty*(i.cur==='USD'?(rates.USD||0):1):i.type==='fx'?i.amount*(rates[i.cur]||0):i.amount;
 const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const main=i=>i.type==='sec'?'₩'+fmt(Math.round(krw(i))):i.type==='out'?'-₩'+fmt(i.amount):i.type==='in'?'+₩'+fmt(i.amount):i.type==='fx'?CURS[i.cur]+fmt(i.amount,i.cur==='JPY'?0:2):'₩'+fmt(i.amount);
+const main=i=>i.type==='sec'?'₩'+fmt(Math.round(krw(i))):i.type==='out'?'-₩'+fmt(i.amount):i.type==='in'?'+₩'+fmt(i.amount):i.type==='fx'?CURS[i.cur]+fmt(i.amount,i.cur==='JPY'?0:2):(i.amount<0?'-':'')+'₩'+fmt(Math.abs(i.amount));
 const sub=i=>i.note?i.note:(i.type==='sec'?`${i.ticker} ${fmtN(i.qty,4)}주`:i.type==='fx'&&rates[i.cur]?'₩'+fmt(Math.round(krw(i))):'');
 const pill=t=>`<span class="pill t-${t}">${LBL[t]}</span>`;
 
@@ -272,19 +281,24 @@ function detailHtml(i){
   return `<div class="detail${editing?' edit':''}">${h}<div class="da"><button type="button" class="ib${editing?' on':''}" data-act="edit" aria-label="수정">${ICON_EDIT}</button><button type="button" class="ib dl2" data-act="del" aria-label="삭제">${ICON_DEL}</button></div></div>`;
 }
 function build(m){
-  const fl=viewFlows(m),add={},orphan=[],exp=[];
+  const fl=viewFlows(m),add={},orphan=[],exp=[];let orphanOut=0;
+  const ok=id=>items.some(i=>i.id===id&&i.type!=='sec');
+  const nm=id=>(items.find(i=>i.id===id)||{}).name||'';
   fl.forEach(f=>{
     if(f.kind==='in'){
-      if(items.some(i=>i.id===f.acct))add[f.acct]=(add[f.acct]||0)+f.amount;
+      if(ok(f.acct))add[f.acct]=(add[f.acct]||0)+f.amount;
       else orphan.push({id:'f:'+f.fid,type:'in',name:f.name,amount:f.amount});
-    }else exp.push({id:'f:'+f.fid,type:'out',name:f.name,amount:f.amount});
+    }else{
+      exp.push({id:'f:'+f.fid,type:'out',name:f.name,amount:f.amount,note:nm(f.acct)});
+      if(ok(f.acct))add[f.acct]=(add[f.acct]||0)-f.amount;else orphanOut+=f.amount;
+    }
   });
   const vi=items.map(i=>{
     const a=add[i.id];if(!a)return i;
     if(i.type!=='fx')return {...i,amount:i.amount+a};
     const r=rates[i.cur];return r?{...i,amount:Math.round((i.amount+a/r)*100)/100}:i;
   });
-  const net=vi.reduce((s,i)=>s+krw(i),0)+orphan.reduce((s,i)=>s+i.amount,0)-exp.reduce((s,i)=>s+i.amount,0);
+  const net=vi.reduce((s,i)=>s+krw(i),0)+orphan.reduce((s,i)=>s+i.amount,0)-orphanOut;
   return {vi,orphan,exp,net};
 }
 function render(keep=false){
@@ -311,15 +325,50 @@ function render(keep=false){
   renderIncome();
 }
 let imo=0;
+function sankey(svg,ins,outs,I,E){
+  const T=Math.max(I,E);
+  if(T<=0){svg.setAttribute('viewBox','0 0 360 1');svg.innerHTML='';return}
+  const L=ins.map(x=>({...x})),R=outs.map(x=>({...x}));
+  if(E>I)L.push({id:'def',type:'rest',name:'부족',amount:E-I});
+  if(I>E)R.push({id:'rest',type:'rest',name:'잔액',amount:I-E});
+  const GAP=14,MINH=26,n=Math.max(L.length,R.length),H=Math.max(220,n*64);
+  const colH=(c,k)=>c.reduce((s,x)=>s+Math.max(x.amount*k,MINH),0)+GAP*(c.length-1);
+  let k=(H-GAP*(n-1))/T;
+  for(let t=0;t<40&&Math.max(colH(L,k),colH(R,k))>H;t++)k*=.94;
+  const place=c=>{let y=(H-colH(c,k))/2;c.forEach(x=>{x.h=Math.max(x.amount*k,MINH);x.y=y;y+=x.h+GAP})};
+  place(L);place(R);
+  const col=(x,i)=>x.type==='in'?`color-mix(in srgb,var(--c-in) ${Math.max(50,100-i*12)}%,var(--bg))`:x.type==='out'?`color-mix(in srgb,var(--c-out) ${Math.max(50,100-i*12)}%,var(--bg))`:'var(--mute)';
+  const XL=100,XR=252,BW=8,XM=(XL+BW+XR)/2;
+  let links='',nodes='';
+  L.forEach(l=>l.o=0);R.forEach(r=>r.o=0);
+  L.forEach((l,li)=>R.forEach(r=>{
+    const f=l.amount*r.amount/T,lh=f/l.amount*l.h,rh=f/r.amount*r.h;
+    const y0=l.y+l.o,y1=y0+lh,z0=r.y+r.o,z1=z0+rh;l.o+=lh;r.o+=rh;
+    links+=`<path d="M${XL+BW} ${y0}C${XM} ${y0} ${XM} ${z0} ${XR} ${z0}L${XR} ${z1}C${XM} ${z1} ${XM} ${y1} ${XL+BW} ${y1}Z" style="fill:${col(l,li)};opacity:.22"/>`;
+  }));
+  const cut=s=>s.length>7?s.slice(0,6)+'…':s;
+  const draw=(c,x,anchor,tx)=>c.forEach((nd,i)=>{
+    const cy=nd.y+nd.h/2;
+    nodes+=`<rect class="sn" data-id="${nd.id}" x="${x}" y="${nd.y}" width="${BW}" height="${nd.h}" rx="3" style="fill:${col(nd,i)}"/>`
+      +`<text x="${tx}" y="${cy-2}" text-anchor="${anchor}" style="font-size:12px;font-weight:600;fill:var(--fg)">${esc(cut(nd.name))}</text>`
+      +`<text x="${tx}" y="${cy+12}" text-anchor="${anchor}" style="font-size:11px;fill:var(--mute)">₩${fmt(nd.amount)}</text>`;
+  });
+  draw(L,XL,'end',XL-8);draw(R,XR,'start',XR+BW+8);
+  svg.setAttribute('viewBox',`0 0 360 ${H}`);
+  svg.innerHTML=links+nodes;
+}
 function renderIncome(){
-  const key=keyOf(baseM()+imo),M=baseM()+imo;
-  const ls_=flows.filter(f=>f.kind==='in'&&f.month===key).map(f=>({id:'f:'+f.id,fid:f.id,type:'in',name:f.name,amount:f.amount,note:(items.find(i=>i.id===f.acct)||{}).name||''}));
-  poolI=ls_;
-  const tot=ls_.reduce((s,i)=>s+i.amount,0);
-  $('#itotal').textContent='₩'+fmt(tot);
+  const M=baseM()+imo,key=keyOf(M);
+  const nm=id=>(items.find(i=>i.id===id)||{}).name||'';
+  const mk=k=>flows.filter(f=>f.kind===k&&f.month===key).map(f=>({id:'f:'+f.id,fid:f.id,type:k,name:f.name,amount:f.amount,note:nm(f.acct)})).sort((a,b)=>b.amount-a.amount);
+  const ins=mk('in'),outs=mk('out');
+  const I=ins.reduce((s,x)=>s+x.amount,0),E=outs.reduce((s,x)=>s+x.amount,0);
+  poolI=[...ins,...outs,{id:'rest',type:'rest',name:'잔액',amount:I-E},{id:'def',type:'rest',name:'부족',amount:E-I}];
+  $('#itotal').textContent=(I-E<0?'-':'')+'₩'+fmt(Math.abs(I-E));
+  $('#idelta').textContent=(I||E)?`수입 ₩${fmt(I)} · 지출 ₩${fmt(E)}`:'';
   $('#imlabel').textContent=`${Math.floor(M/12)}년 ${M%12+1}월`;
-  ring($('#isvg'),ls_);
-  $('#ilist').innerHTML=ls_.map(i=>`<div class="row" data-fid="${i.fid}">${rowHtml(i)}</div>`).join('');
+  sankey($('#isvg'),ins,outs,I,E);
+  $('#ilist').innerHTML=[...ins,...outs].map(i=>`<div class="row${i.type==='out'?' ex':''}" data-fid="${i.fid}">${rowHtml(i)}</div>`).join('');
 }
 $('#mp').onclick=()=>{mo=Math.max(mo-1,-12);hideTip();render()};
 $('#mn').onclick=()=>{mo=Math.min(mo+1,60);hideTip();render()};
@@ -345,14 +394,14 @@ function hideTip(){tip.classList.remove('show');document.querySelectorAll('.char
 function bindChart(svg,pool){
   const probe=e=>{
     const el=document.elementFromPoint(e.clientX,e.clientY);
-    if(el&&el.classList&&el.classList.contains('seg')&&svg.contains(el))showTip(el.dataset.id,e.clientX,e.clientY,pool(),svg);else hideTip();
+    if(el&&el.classList&&(el.classList.contains('seg')||el.classList.contains('sn'))&&svg.contains(el))showTip(el.dataset.id,e.clientX,e.clientY,pool(),svg);else hideTip();
   };
   svg.addEventListener('pointermove',probe);
   svg.addEventListener('pointerdown',probe);
   svg.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')hideTip()});
 }
 bindChart($('#svg'),()=>poolA);bindChart($('#isvg'),()=>poolI);
-document.addEventListener('pointerdown',e=>{if(!e.target.closest('.chart svg'))hideTip()});
+document.addEventListener('pointerdown',e=>{if(!e.target.closest('.chart svg,.sk svg'))hideTip()});
 
 // amount input
 const amtEl=$('#amount');
@@ -424,11 +473,14 @@ function openModal(id){
   setTimeout(()=>$('#name').focus(),50);
 }
 const closeModal=()=>{$('#ov').classList.remove('open');$('#ov2').classList.remove('open')};
-$('#add').onclick=()=>{if(tab===0)openModal();else if(tab===1)openIncome()};
-let iEdit=null;
-function openIncome(id){
+$('#add').onclick=()=>{if(tab===0)openModal();else if(tab===1)openFlow()};
+let iEdit=null,fKind='in';
+const setKind=k=>{fKind=k;document.querySelectorAll('#ktypes button').forEach(b=>b.classList.toggle('on',b.dataset.k===k))};
+$('#ktypes').onclick=e=>{const b=e.target.closest('button');if(b)setKind(b.dataset.k)};
+function openFlow(id){
   iEdit=id||null;const f=flows.find(v=>v.id===id);
-  $('#imt').textContent=f?'수입 수정':'수입 추가';
+  setKind(f?f.kind:'in');
+  $('#imt').textContent=f?'내역 수정':'내역 추가';
   $('#iname').value=f?f.name:'';
   $('#iamt').value=f?fmtAmt(String(f.amount),false):'';
   const sel=$('#iacct');
@@ -445,12 +497,12 @@ $('#iform').onsubmit=e=>{
   e.preventDefault();
   const amount=parseInt($('#iamt').value.replace(/,/g,''),10),name=$('#iname').value.trim(),acct=$('#iacct').value;
   if(!name||isNaN(amount)||amount<=0||!acct)return;
-  if(iEdit)flows=flows.map(v=>v.id===iEdit?{...v,name,amount,acct}:v);
-  else flows.push({id:String(Date.now()),kind:'in',name,amount,acct,month:keyOf(baseM()+imo)});
+  if(iEdit)flows=flows.map(v=>v.id===iEdit?{...v,name,amount,acct,kind:fKind}:v);
+  else flows.push({id:String(Date.now()),kind:fKind,name,amount,acct,month:keyOf(baseM()+imo)});
   saveFlows();closeModal();
 };
 function saveFlows(){ls.set('flows',flows);render();push()}
-$('#ilist').addEventListener('click',e=>{const row=e.target.closest('.row[data-fid]');if(row)openIncome(row.dataset.fid)});
+$('#ilist').addEventListener('click',e=>{const row=e.target.closest('.row[data-fid]');if(row)openFlow(row.dataset.fid)});
 $('#cancel').onclick=closeModal;
 $('#ov').addEventListener('pointerdown',e=>{if(e.target.id==='ov')closeModal()});
 $('#del').onclick=()=>{items=items.filter(v=>v.id!==editId);save();closeModal()};
