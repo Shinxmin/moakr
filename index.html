@@ -40,9 +40,11 @@ main{max-width:520px;margin:0 auto;padding:calc(68px + env(safe-area-inset-top))
 .dim .seg:not(.on){opacity:.3}
 .ring-empty{fill:none;stroke:var(--line);stroke-width:20}
 .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;pointer-events:none}
-.mo{display:flex;align-items:center;gap:2px;font-size:13px;font-weight:600;color:var(--sub);pointer-events:auto}
-.mo span{min-width:44px;text-align:center}
-.mo button{width:26px;height:26px;border:0;padding:0;border-radius:50%;background:transparent;color:var(--mute);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.mo{position:absolute;left:0;right:0;bottom:calc(50% + 17px);display:flex;align-items:center;justify-content:center;gap:0;font-size:13px;font-weight:600;color:var(--sub);pointer-events:auto}
+.mc{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:30px}
+.mc small{font-size:10px;font-weight:500;color:var(--mute);line-height:1}
+.mc span{line-height:1}
+.mo button{width:24px;height:24px;border:0;padding:0;border-radius:50%;background:transparent;color:var(--mute);display:flex;align-items:center;justify-content:center;cursor:pointer}
 .mo button:active{background:var(--field)}
 .mo svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .seg.dash{stroke-dasharray:4 3}
@@ -117,7 +119,7 @@ nav span{font-size:10px;font-weight:600;line-height:1}
 <div class="view on" id="v-0">
   <div class="card chart-card"><div class="chart" id="chart">
     <svg viewBox="0 0 200 200" id="svg"></svg>
-    <div class="center"><div class="mo"><button id="mp" aria-label="이전 달"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><span id="mlabel"></span><button id="mn" aria-label="다음 달"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button></div><b id="total">₩0</b></div>
+    <div class="center"><div class="mo"><button id="mp" aria-label="이전 달"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><div class="mc"><small id="myear"></small><span id="mlabel"></span></div><button id="mn" aria-label="다음 달"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button></div><b id="total">₩0</b></div>
   </div></div>
   <div class="card list" id="list"></div>
 </div>
@@ -190,16 +192,13 @@ function viewFlows(){
   });
   return out;
 }
-function monthLabel(){
-  const M=baseM()+mo,y=Math.floor(M/12),m=M%12+1;
-  return y===new Date().getFullYear()?`${m}월`:`${y}.${m}월`;
-}
+function monthParts(){const M=baseM()+mo;return [Math.floor(M/12),M%12+1]}
 function render(){
   const fl=viewFlows(),all=[...items,...fl];
   const net=items.reduce((s,i)=>s+krw(i),0)+fl.reduce((s,f)=>s+(f.type==='in'?f.amount:-f.amount),0);
   const gross=all.reduce((s,i)=>s+krw(i),0);
   $('#total').textContent=(net<0?'-':'')+'₩'+fmt(Math.abs(Math.round(net)));
-  $('#mlabel').textContent=monthLabel();
+  {const [y,m]=monthParts();$('#myear').textContent=y;$('#mlabel').textContent=m+'월'}
   const svg=$('#svg');
   let h='<circle class="ring-empty" cx="100" cy="100" r="78"/>';
   if(gross>0){
