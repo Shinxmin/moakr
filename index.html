@@ -175,17 +175,24 @@ nav .tabs span{font-size:10px;font-weight:600;line-height:1}
 .sp .dl{margin-top:8px;line-height:1.6}
 #v-2{position:relative;margin:calc(-1*(68px + env(safe-area-inset-top))) -16px calc(-1*(132px + env(safe-area-inset-bottom)));height:max(100vh,560px);height:max(100dvh,560px)}
 #v-2.on{display:flex;flex-direction:column}
+#v-2[data-sv="1"] .z3{display:none}
+#v-2[data-sv="2"] .z2{display:none}
+.dots{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(78px + env(safe-area-inset-bottom));z-index:12;display:none;gap:10px;align-items:center}
+.dots.show{display:flex}
+.dots button{position:relative;width:7px;height:7px;padding:0;border:0;border-radius:50%;background:color-mix(in srgb,var(--mute) 40%,var(--bg));cursor:pointer;transition:background .2s,transform .2s}
+.dots button::after{content:'';position:absolute;inset:-9px}
+.dots button.on{background:var(--sub);transform:scale(1.15)}
 .zone{position:static;left:auto;right:auto}
 .z1{flex:0 0 auto;padding:calc(78px + env(safe-area-inset-top)) 16px 18px;text-align:center}
 .z1 .mo{position:static;font-size:14px;color:var(--fg)}
 .z1 .mo button{color:var(--fg)}
 .z1 .sdiv{margin:calc(6px + max(0px,13vh - 88px)) 0 0;text-align:center}
 .z1 .sr{line-height:1.75}
-.z2{flex:1 1 0;min-height:170px;padding:24px 16px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:center}
+.z2{flex:1 1 0;min-height:170px;padding:24px 16px calc(96px + env(safe-area-inset-bottom));border-top:1px solid var(--line);display:flex;align-items:center;justify-content:center}
 .z2 svg{width:100%;height:100%;display:block;overflow:visible}
 .z2.empty svg{display:none}
 .z2.empty .emp{display:block}
-.z3{flex:0 0 clamp(210px,31vh,330px);padding:12px 16px calc(76px + env(safe-area-inset-bottom));border-top:1px solid var(--line);display:flex;justify-content:center}
+.z3{flex:1 1 0;min-height:170px;padding:12px 16px calc(96px + env(safe-area-inset-bottom));border-top:1px solid var(--line);display:flex;justify-content:center}
 .z3 svg{width:60%;height:100%;display:block;transform:translateY(-15px)}
 .t-rest{--pc:var(--mute)}
 </style>
@@ -205,7 +212,7 @@ nav .tabs span{font-size:10px;font-weight:600;line-height:1}
   <div class="card chart-card sp cm"><div class="mo"><button id="cmp" aria-label="이전 달"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><span id="cmlabel"></span><button id="cmn" aria-label="다음 달"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button></div></div>
   <div class="card list" id="clist"></div>
 </div>
-<div class="view" id="v-2">
+<div class="view" id="v-2" data-sv="1">
   <div class="zone z1">
     <div class="mo"><button id="imp" aria-label="이전 달"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><span id="imlabel"></span><button id="imn" aria-label="다음 달"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button></div>
     <div class="sdiv" id="idelta"></div>
@@ -214,6 +221,7 @@ nav .tabs span{font-size:10px;font-weight:600;line-height:1}
   <div class="zone z3"><svg id="tsvg" viewBox="0 0 200 160"></svg></div>
 </div>
 </main>
+<div class="dots" id="dots"><button type="button" data-v="1" class="on" aria-label="다이어그램"></button><button type="button" data-v="2" aria-label="월별 그래프"></button></div>
 <div id="scrim"></div>
 <div class="dock" id="dock"><nav id="nav"><div class="tabs" id="tabs"><i class="ind" id="ind"></i>
   <button class="on" data-i="0"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg><span>자산</span></button>
@@ -595,6 +603,12 @@ document.addEventListener('selectstart',e=>{if(!e.target.closest||!e.target.clos
 // keep dock above the on-screen keyboard
 if(window.visualViewport){const vv=visualViewport,dk=()=>{const h=Math.max(0,innerHeight-vv.height-vv.offsetTop);$('#dock').style.bottom=`calc(16px + env(safe-area-inset-bottom) + ${h}px)`};vv.addEventListener('resize',dk);vv.addEventListener('scroll',dk)}
 
+// stats: diagram / monthly graph pager
+document.querySelectorAll('#dots button').forEach(b=>b.onclick=()=>{
+  $('#v-2').dataset.sv=b.dataset.v;
+  document.querySelectorAll('#dots button').forEach(x=>x.classList.toggle('on',x===b));
+});
+
 // tabs
 let tab=0;
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{
@@ -604,6 +618,7 @@ document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));
   $('#ind').style.transform=`translateX(${n*100}%)`;
   scrollTo(0,0);
+  $('#dots').classList.toggle('show',n===2);
   fitSankey();
 });
 
