@@ -176,6 +176,9 @@ nav .tabs span{font-size:10px;font-weight:600;line-height:1}
 #v-2{position:relative;margin:calc(-1*(68px + env(safe-area-inset-top))) -16px calc(-1*(132px + env(safe-area-inset-bottom)));height:max(100vh,560px);height:max(100dvh,560px)}
 #v-2.on{display:flex;flex-direction:column}
 #v-2[data-sv="1"] .z3{display:none}
+.z2,.z3{touch-action:pan-y}
+.z2.sl-r,.z3.sl-r{animation:vr .3s cubic-bezier(.2,.8,.2,1)}
+.z2.sl-l,.z3.sl-l{animation:vl .3s cubic-bezier(.2,.8,.2,1)}
 #v-2[data-sv="2"] .z2{display:none}
 .dots{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(78px + env(safe-area-inset-bottom));z-index:12;display:none;gap:10px;align-items:center}
 .dots.show{display:flex}
@@ -189,11 +192,11 @@ nav .tabs span{font-size:10px;font-weight:600;line-height:1}
 .z1 .sdiv{margin:calc(6px + max(0px,13vh - 88px)) 0 0;text-align:center}
 .z1 .sr{line-height:1.75}
 .z2{flex:1 1 0;min-height:170px;padding:24px 16px calc(96px + env(safe-area-inset-bottom));border-top:1px solid var(--line);display:flex;align-items:center;justify-content:center}
-.z2 svg{width:100%;height:100%;display:block;overflow:visible}
+.z2 svg{width:92%;height:92%;display:block;overflow:visible}
 .z2.empty svg{display:none}
 .z2.empty .emp{display:block}
 .z3{flex:1 1 0;min-height:170px;padding:12px 16px calc(96px + env(safe-area-inset-bottom));border-top:1px solid var(--line);display:flex;justify-content:center}
-.z3 svg{width:60%;height:100%;display:block;transform:translateY(-15px)}
+.z3 svg{width:72%;height:100%;display:block;transform:translateY(-15px)}
 .t-rest{--pc:var(--mute)}
 </style>
 </head>
@@ -603,11 +606,30 @@ document.addEventListener('selectstart',e=>{if(!e.target.closest||!e.target.clos
 // keep dock above the on-screen keyboard
 if(window.visualViewport){const vv=visualViewport,dk=()=>{const h=Math.max(0,innerHeight-vv.height-vv.offsetTop);$('#dock').style.bottom=`calc(16px + env(safe-area-inset-bottom) + ${h}px)`};vv.addEventListener('resize',dk);vv.addEventListener('scroll',dk)}
 
-// stats: diagram / monthly graph pager
-document.querySelectorAll('#dots button').forEach(b=>b.onclick=()=>{
-  $('#v-2').dataset.sv=b.dataset.v;
-  document.querySelectorAll('#dots button').forEach(x=>x.classList.toggle('on',x===b));
-});
+// stats: diagram / monthly graph pager (dots, swipe, mouse drag)
+function setSV(v,dir){
+  const box=$('#v-2');if(box.dataset.sv===String(v))return;
+  box.dataset.sv=v;
+  document.querySelectorAll('#dots button').forEach(x=>x.classList.toggle('on',x.dataset.v===String(v)));
+  const z=v===1?$('.z2'):$('.z3');
+  z.classList.remove('sl-l','sl-r');void z.offsetWidth;z.classList.add(dir<0?'sl-l':'sl-r');
+}
+document.querySelectorAll('#dots button').forEach(b=>b.onclick=()=>{const v=+b.dataset.v,cur=+$('#v-2').dataset.sv;setSV(v,v>cur?1:-1)});
+{
+  let sx=0,sy=0,tracking=false;
+  const box=$('#v-2');
+  box.addEventListener('pointerdown',e=>{if(e.target.closest('.z1')||e.target.closest('button'))return;tracking=true;sx=e.clientX;sy=e.clientY});
+  const end=e=>{
+    if(!tracking)return;tracking=false;
+    const dx=e.clientX-sx,dy=e.clientY-sy;
+    if(Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)*1.5){
+      const cur=+box.dataset.sv;
+      if(dx<0&&cur===1)setSV(2,1);else if(dx>0&&cur===2)setSV(1,-1);
+    }
+  };
+  box.addEventListener('pointerup',end);
+  box.addEventListener('pointercancel',()=>{tracking=false});
+}
 
 // tabs
 let tab=0;
