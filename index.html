@@ -177,7 +177,7 @@ nav .tabs span{font-size:10px;font-weight:600;line-height:1}
   <button class="on" data-i="0"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg><span>자산</span></button>
 </div><form class="xf" id="nform" autocomplete="off"><div class="xr"><input id="nmin" placeholder="이름" maxlength="20" required><button type="submit" class="xok">저장</button></div></form>
 <form class="xf" id="iform" autocomplete="off">
-  <div class="xr"><div class="seg-t" id="atypes"><button type="button" data-a="cash" class="on">입출금</button><button type="button" data-a="fx">외화</button><button type="button" data-a="save">예적금</button><button type="button" data-a="sec">증권</button></div><button type="button" class="xi hide" id="idel" aria-label="삭제"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 11v6M14 11v6M6 7l1 12h10l1-12M9 7V4h6v3"/></svg></button></div>
+  <div class="xr"><div class="seg-t" id="atypes"><button type="button" data-a="cash" class="on">통장</button><button type="button" data-a="save">저축</button><button type="button" data-a="fx">외화</button><button type="button" data-a="sec">증권</button></div><button type="button" class="xi hide" id="idel" aria-label="삭제"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 11v6M14 11v6M6 7l1 12h10l1-12M9 7V4h6v3"/></svg></button></div>
   <div id="xbody"></div>
 </form></nav><button class="add" id="add" aria-label="추가"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M9 3v12M3 9h12"/></svg></button></div>
 <div id="tip"></div>
@@ -204,7 +204,7 @@ nav .tabs span{font-size:10px;font-weight:600;line-height:1}
 const TYPES={cash:'입출금',fx:'외화',save:'예적금',sec:'증권'};
 const CURS={USD:'$',JPY:'¥',CNY:'CN¥'};
 const COLORS={cash:'--c-cash',fx:'--c-fx',save:'--c-save',in:'--c-in',out:'--c-out',sec:'--c-sec'};
-const LBL={cash:'입출금',fx:'외화',save:'예적금',in:'소득',out:'지출',sec:'증권',rest:'잔액'};
+const LBL={cash:'통장',fx:'외화',save:'저축',in:'소득',out:'지출',sec:'증권',rest:'잔액'};
 const $=s=>document.querySelector(s);
 const ls={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
 let items=ls.get('assets',[]);
@@ -324,9 +324,11 @@ function render(keep=false){
     const d=$('#delta');
     if(mo<0)d.textContent='';
     else{
-      const prev=build(mo-1).net,diff=Math.round(net-prev);
-      const pct=prev>0?(diff/prev*100).toFixed(1):null;
-      d.textContent=(diff<0?'-':'+')+'₩'+fmt(Math.abs(diff))+(pct!==null?` (${pct==='-0.0'?'0.0':pct}%)`:'');
+      const prev=build(mo-1).net;
+      if(prev>0){
+        const pct=(net-prev)/prev*100,a=Math.abs(pct).toFixed(1);
+        d.textContent=a==='0.0'?'전월대비 자산 변동이 없어요':`전월대비 자산이 ${a}% ${pct>0?'증가':'감소'}했어요`;
+      }else d.textContent='';
     }
   }
   {const [y,m]=monthParts();$('#mlabel').textContent=`${y}년 ${m}월`}
