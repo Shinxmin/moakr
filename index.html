@@ -70,7 +70,7 @@ main{max-width:520px;margin:0 auto;padding:calc(68px + env(safe-area-inset-top))
 #tip .h{display:flex;align-items:center;gap:8px;margin-bottom:7px}
 #tip .n{font-size:12px;font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #tip .a{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
-#tip .k{font-size:10px;font-weight:400;color:var(--mute);margin-left:8px;font-variant-numeric:tabular-nums}
+#tip .k{display:block;white-space:pre-line;font-size:10px;font-weight:400;color:var(--mute);margin:3px 0 0;line-height:1.5;font-variant-numeric:tabular-nums}
 .list{position:relative;border-radius:0;border-top:1px solid var(--line);padding:10px 6px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .list:empty{display:none}
 .row{display:flex;align-items:center;gap:8px;padding:18px 10px;border-radius:12px;cursor:pointer;touch-action:pan-y;transition:background .15s,transform .2s}
@@ -228,8 +228,9 @@ const fmtN=(n,d)=>Number(n).toLocaleString('ko-KR',{maximumFractionDigits:d});
 const krw=i=>i.type==='sec'?(i.krw||0)+(i.usd||0)*(rates.USD||0):i.type==='fx'?i.amount*(rates[i.cur]||0):i.amount;
 const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const main=i=>i.type==='sec'?'₩'+fmt(Math.round(krw(i))):i.type==='out'||i.type==='in'?'₩'+fmt(i.amount):i.type==='fx'?CURS[i.cur]+fmt(i.amount,i.cur==='JPY'?0:2):(i.amount<0?'-':'')+'₩'+fmt(Math.abs(i.amount));
-const sub=i=>i.note?i.note:(i.type==='sec'?`$${fmtN(i.usd||0,2)} · ₩${fmt(Math.round(i.krw||0))}`:i.type==='fx'&&rates[i.cur]?'₩'+fmt(Math.round(krw(i))):'');
+const main=i=>i.type==='sec'?'₩'+fmt(Math.round(krw(i))):i.type==='out'||i.type==='in'?'₩'+fmt(i.amount):i.type==='fx'?'₩'+fmt(Math.round(krw(i))):(i.amount<0?'-':'')+'₩'+fmt(Math.abs(i.amount));
+const sub=i=>i.note?i.note:(i.type==='sec'?`USD ${fmtN(i.usd||0,2)}\nKRW ${fmt(Math.round(i.krw||0))}`:i.type==='fx'?`${i.cur} ${fmtN(i.amount,i.cur==='JPY'?0:2)}`:'');
+const subHtml=i=>sub(i)?sub(i).split('\n').map(t=>`<small>${esc(t)}</small>`).join(''):'';
 const pill=t=>`<span class="pill t-${t}">${LBL[t]}</span>`;
 
 // colors: per-type hue, varying lightness per account
@@ -266,7 +267,7 @@ function ring(svg,entries){
   svg.innerHTML=h;
 }
 const rowHtml=i=>`${pill(i.type)}<span class="nm">${esc(i.name)}</span>
-    <div class="r"><b>${main(i)}</b>${sub(i)?`<small>${esc(sub(i))}</small>`:''}</div>`;
+    <div class="r"><b>${main(i)}</b>${subHtml(i)}</div>`;
 
 const ICON_EDIT='<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>';
 const ICON_DEL='<svg viewBox="0 0 24 24"><path d="M5 7h14M10 11v6M14 11v6M6 7l1 12h10l1-12M9 7V4h6v3"/></svg>';
@@ -329,7 +330,7 @@ function render(keep=false){
   poolA=vi;
   if(keep){
     vi.forEach(i=>{const row=$('#list').querySelector(`.row[data-id="${i.id}"]`);if(!row)return;
-      row.querySelector('.nm').textContent=i.name;row.querySelector('.r').innerHTML=`<b>${main(i)}</b>${sub(i)?`<small>${esc(sub(i))}</small>`:''}`});
+      row.querySelector('.nm').textContent=i.name;row.querySelector('.r').innerHTML=`<b>${main(i)}</b>${subHtml(i)}`});
   }else
   $('#list').innerHTML=vi.map(i=>`<div class="row${i.id===openId?' open':''}" data-id="${i.id}">${rowHtml(i)}${i.id===openId?detailHtml(items.find(x=>x.id===i.id)||i):''}</div>`).join('');
 }
@@ -340,7 +341,7 @@ $('#mn').onclick=()=>{mo=Math.min(mo+1,60);hideTip();render()};
 const tip=$('#tip');
 function showTip(id,x,y,pool,svg){
   const i=pool.find(v=>v.id===id);if(!i)return;
-  tip.innerHTML=`<div class="h">${pill(i.type)}<span class="n">${esc(i.name)}</span></div><div class="a">${main(i)}${sub(i)?`<span class="k">${sub(i)}</span>`:''}</div>`;
+  tip.innerHTML=`<div class="h">${pill(i.type)}<span class="n">${esc(i.name)}</span></div><div class="a">${main(i)}${sub(i)?`<span class="k">${esc(sub(i))}</span>`:''}</div>`;
   tip.classList.add('show');
   const w=tip.offsetWidth,hh=tip.offsetHeight;
   let l=x+16,t=y-hh-14;
