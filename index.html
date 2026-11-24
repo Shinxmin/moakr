@@ -22,7 +22,7 @@
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 input,select,[contenteditable]{-webkit-user-select:text;user-select:text}
-html,body{scrollbar-width:none;-ms-overflow-style:none;overscroll-behavior:none}
+html,body{overflow-x:hidden;scrollbar-width:none;-ms-overflow-style:none;overscroll-behavior:none}
 ::-webkit-scrollbar{display:none;width:0;height:0}
 html.nos,html.nos body{overflow:hidden;height:100%}
 html,body{margin:0;background:var(--bg);color:var(--fg);font-family:"Pretendard",-apple-system,"Noto Sans KR",system-ui,sans-serif;letter-spacing:-.01em}
@@ -70,7 +70,6 @@ main{max-width:520px;margin:0 auto;padding:calc(68px + env(safe-area-inset-top))
 #tip .a{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
 #tip .k{display:block;white-space:pre-line;font-size:10px;font-weight:400;color:var(--mute);margin:3px 0 0;line-height:1.5;font-variant-numeric:tabular-nums}
 .list{position:relative;border-radius:0;border-top:1px solid var(--line);padding:10px 6px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
-.list:empty{display:none}
 .row{display:flex;align-items:center;gap:8px;padding:18px 10px;border-radius:12px;cursor:pointer;touch-action:pan-y;transition:background .15s,transform .2s}
 .row.press{background:var(--field)}
 .row.drag{position:relative;z-index:5;background:var(--card);box-shadow:var(--shadow);transition:none;cursor:grabbing}
@@ -157,15 +156,17 @@ nav .tabs span{font-size:10px;font-weight:600;line-height:1}
 .ib.on{background:var(--primary);color:#fff}
 .ib.dl2{color:#f04452}
 .secf{margin-bottom:0}
-#v-2{min-height:max(520px,calc(100dvh - 200px - env(safe-area-inset-top) - env(safe-area-inset-bottom)))}
+#v-2{min-height:max(520px,calc(100svh - 200px - env(safe-area-inset-top) - env(safe-area-inset-bottom)))}
 #v-2.on{display:flex;flex-direction:column}
-.sz{flex:1.15 1 0;min-height:200px;padding:6px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:center}
-.sz svg{width:92%;height:100%;display:block;overflow:visible}
+.sz{position:relative;flex:1.35 1 0;min-height:200px}
+.sz svg{position:absolute;left:16px;right:16px;top:6px;bottom:6px;width:calc(100% - 32px);height:calc(100% - 12px);display:block}
+.sz .emp{position:absolute;inset:0;display:none;align-items:center;justify-content:center}
 .emp{display:none;font-size:14px;color:var(--mute)}
 .sz.empty svg{display:none}
-.sz.empty .emp{display:block}
+.sz.empty .emp{display:flex}
 .xf #ktypes{flex:none;width:50%;margin:0}
 .cemp{padding:60px 0;text-align:center;font-size:14px;color:var(--mute)}
+#v-2 .stn{border-bottom:1px solid var(--line)}
 .stn{padding:14px 0;text-align:center}
 .chart .mo{color:var(--fg)}
 .chart .mo button{color:var(--fg)}
@@ -353,7 +354,7 @@ function render(keep=false){
     vi.forEach(i=>{const row=$('#list').querySelector(`.row[data-id="${i.id}"]`);if(!row)return;
       row.querySelector('.nm').textContent=i.name;row.querySelector('.r').innerHTML=`<b>${main(i)}</b>${subHtml(i)}`});
   }else
-  $('#list').innerHTML=vi.map(i=>`<div class="row${i.id===openId?' open':''}${slCls(i)}" data-id="${i.id}">${rowHtml(i)}${i.id===openId?detailHtml(items.find(x=>x.id===i.id)||i):''}</div>`).join('');
+  $('#list').innerHTML=!vi.length?'<div class="cemp">데이터가 없습니다</div>':vi.map(i=>`<div class="row${i.id===openId?' open':''}${slCls(i)}" data-id="${i.id}">${rowHtml(i)}${i.id===openId?detailHtml(items.find(x=>x.id===i.id)||i):''}</div>`).join('');
 }
 $('#mp').onclick=()=>{mo=Math.max(mo-1,-12);hideTip();render()};
 $('#mn').onclick=()=>{mo=Math.min(mo+1,60);hideTip();render()};
@@ -451,7 +452,7 @@ function sankey(svg,ins,outs,I,E){
   place(L);place(R);
   const mh=Math.max(T*k,MINH),M={id:'inc',type:'in',name:'소득',amount:I,y:PAD+(H-mh)/2,h:mh};
   const col=(x,i)=>x.type==='in'?`color-mix(in srgb,var(--c-in) ${Math.max(50,100-i*12)}%,var(--bg))`:x.type==='out'?`color-mix(in srgb,var(--c-out) ${Math.max(50,100-i*12)}%,var(--bg))`:'var(--mute)';
-  const XL=64,XM=176,XR=282,BW=8;
+  const XL=72,XM=176,XR=272,BW=8;
   const rib=(x0,y0,y1,x1,z0,z1,c)=>{const m=(x0+x1)/2;return `<path d="M${x0} ${y0}C${m} ${y0} ${m} ${z0} ${x1} ${z0}L${x1} ${z1}C${m} ${z1} ${m} ${y1} ${x0} ${y1}Z" style="fill:${c};opacity:.22"/>`};
   let links='',nodes='',mo=0;
   L.forEach((l,i)=>{const z0=M.y+mo,z1=z0+l.amount/T*M.h;mo+=l.amount/T*M.h;links+=rib(XL+BW,l.y,l.y+l.h,XM,z0,z1,col(l,i))});
