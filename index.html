@@ -410,7 +410,7 @@ $('#nform').onsubmit=e=>{
 };
 
 // disable copy / cut / paste / context menu / drag
-['copy','cut','paste','contextmenu','dragstart'].forEach(t=>document.addEventListener(t,e=>e.preventDefault()));
+['copy','cut','contextmenu','dragstart'].forEach(t=>document.addEventListener(t,e=>e.preventDefault()));
 document.addEventListener('selectstart',e=>{if(!e.target.closest||!e.target.closest('input,select,[contenteditable]'))e.preventDefault()});
 
 // keep dock above the on-screen keyboard
