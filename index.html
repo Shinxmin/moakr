@@ -77,7 +77,10 @@ main{max-width:520px;margin:0 auto;padding:calc(68px + env(safe-area-inset-top))
 .row.press{background:var(--field)}
 .row.drag{position:relative;z-index:5;background:var(--card);box-shadow:var(--shadow);transition:none;cursor:grabbing}
 .row .nm{flex:1;min-width:0;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.row .r{text-align:right;font-variant-numeric:tabular-nums;flex:none}
+.row .r{position:relative;text-align:right;font-variant-numeric:tabular-nums;flex:none}
+.row .r .ss{position:absolute;right:0;top:100%;white-space:nowrap}
+.row.sl1{padding-bottom:36px}
+.row.sl2{padding-bottom:52px}
 .row .r b{display:block;font-size:13px;font-weight:700}
 .row .r small{display:block;font-size:10px;color:var(--mute);margin-top:2px}
 .ov{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;padding:16px;
@@ -231,6 +234,7 @@ const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&qu
 const main=i=>i.type==='sec'?'₩'+fmt(Math.round(krw(i))):i.type==='out'||i.type==='in'?'₩'+fmt(i.amount):i.type==='fx'?'₩'+fmt(Math.round(krw(i))):(i.amount<0?'-':'')+'₩'+fmt(Math.abs(i.amount));
 const sub=i=>i.note?i.note:(i.type==='sec'?`USD ${fmtN(i.usd||0,2)}\nKRW ${fmt(Math.round(i.krw||0))}`:i.type==='fx'?`${i.cur} ${fmtN(i.amount,i.cur==='JPY'?0:2)}`:'');
 const subHtml=i=>sub(i)?sub(i).split('\n').map(t=>`<small>${esc(t)}</small>`).join(''):'';
+const slCls=i=>{const n=sub(i)?sub(i).split('\n').length:0;return n?' sl'+n:''};
 const pill=t=>`<span class="pill t-${t}">${LBL[t]}</span>`;
 
 // colors: per-type hue, varying lightness per account
@@ -267,7 +271,7 @@ function ring(svg,entries){
   svg.innerHTML=h;
 }
 const rowHtml=i=>`${pill(i.type)}<span class="nm">${esc(i.name)}</span>
-    <div class="r"><b>${main(i)}</b>${subHtml(i)}</div>`;
+    <div class="r"><b>${main(i)}</b><div class="ss">${subHtml(i)}</div></div>`;
 
 const ICON_EDIT='<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>';
 const ICON_DEL='<svg viewBox="0 0 24 24"><path d="M5 7h14M10 11v6M14 11v6M6 7l1 12h10l1-12M9 7V4h6v3"/></svg>';
@@ -332,7 +336,7 @@ function render(keep=false){
     vi.forEach(i=>{const row=$('#list').querySelector(`.row[data-id="${i.id}"]`);if(!row)return;
       row.querySelector('.nm').textContent=i.name;row.querySelector('.r').innerHTML=`<b>${main(i)}</b>${subHtml(i)}`});
   }else
-  $('#list').innerHTML=vi.map(i=>`<div class="row${i.id===openId?' open':''}" data-id="${i.id}">${rowHtml(i)}${i.id===openId?detailHtml(items.find(x=>x.id===i.id)||i):''}</div>`).join('');
+  $('#list').innerHTML=vi.map(i=>`<div class="row${i.id===openId?' open':''}${slCls(i)}" data-id="${i.id}">${rowHtml(i)}${i.id===openId?detailHtml(items.find(x=>x.id===i.id)||i):''}</div>`).join('');
 }
 $('#mp').onclick=()=>{mo=Math.max(mo-1,-12);hideTip();render()};
 $('#mn').onclick=()=>{mo=Math.min(mo+1,60);hideTip();render()};
