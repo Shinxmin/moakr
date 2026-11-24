@@ -117,6 +117,7 @@ nav.exp .tabs{opacity:0;pointer-events:none}
 nav.exp.m-flow #iform,nav.exp.m-name #nform{opacity:1;pointer-events:auto;transition:opacity .25s .12s}
 .xr{display:flex;gap:8px;align-items:center;margin-bottom:8px}
 .xr:last-child{margin-bottom:0}
+.xr.r{justify-content:flex-end}
 .xr input{flex:1;min-width:0}
 .xf .f{margin:0 0 8px}
 .xf input{padding:11px 12px;border-radius:12px}
@@ -442,7 +443,7 @@ function bodyHtml(){
   const name=`<input id="iname" placeholder="이름" maxlength="30" value="${v(e.name)}">`;
   const amt=d=>`<input id="iamt" placeholder="금액" inputmode="decimal" data-d="${d}" value="${v(e.amount)}">`;
   if(e.atype==='sec')
-    return `<label class="f">${name}</label><div class="xr"><input id="iusd" placeholder="금액($)" inputmode="decimal" data-d="2" value="${v(e.usd)}"><input id="ikrw" placeholder="금액(₩)" inputmode="decimal" data-d="0" value="${v(e.krw)}"></div><div class="xr">${save}</div>`;
+    return `<label class="f">${name}</label><div class="xr"><input id="iusd" placeholder="금액($)" inputmode="decimal" data-d="2" value="${v(e.usd)}"><input id="ikrw" placeholder="금액(₩)" inputmode="decimal" data-d="0" value="${v(e.krw)}"></div><div class="xr r">${save}</div>`;
   if(e.atype==='fx')
     return `<div class="xr">${name}<select id="icur">${Object.keys(CURS).map(c=>`<option${c===e.cur?' selected':''}>${c}</option>`).join('')}</select></div><div class="xr">${amt(e.cur==='JPY'?0:2)}${save}</div>`;
   return `<label class="f">${name}</label><div class="xr">${amt(0)}${save}</div>`;
