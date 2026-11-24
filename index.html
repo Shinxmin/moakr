@@ -205,6 +205,19 @@ const LBL={cash:'입출금',fx:'외화',save:'예적금',in:'소득',out:'지출
 const $=s=>document.querySelector(s);
 const ls={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
 let items=ls.get('assets',[]);
+function migSec(o){
+  if(o&&o.type==='sec'&&(o.price!==undefined||o.ticker!==undefined||o.qty!==undefined)){
+    const v=(o.price||0)*(o.qty||0);
+    if(o.cur==='USD'){o.usd=v;o.krw=0}else{o.usd=0;o.krw=v}
+    ['price','qty','ticker','cur'].forEach(k=>{o[k]=undefined});
+    JSON.parse(JSON.stringify(o));
+  }
+  return o;
+}
+function normItems(){
+  items=items.map(it=>{migSec(it);if(it.hist)it.hist.forEach(h=>migSec(h.f));return JSON.parse(JSON.stringify(it))});
+}
+normItems();
 let flows=ls.get('flows',[]); // {id,kind:'in'|'out',name,amount,month:'YYYY-MM',monthly?}
 let mo=0;
 let openId=null,editing=false;
@@ -212,11 +225,11 @@ let rates=ls.get('rates',{USD:0,JPY:0,CNY:0}); // KRW per 1 unit
 let editId=null,curType='cash';
 const fmt=(n,d=0)=>n.toLocaleString('ko-KR',{minimumFractionDigits:d,maximumFractionDigits:d});
 const fmtN=(n,d)=>Number(n).toLocaleString('ko-KR',{maximumFractionDigits:d});
-const krw=i=>i.type==='sec'?i.price*i.qty*(i.cur==='USD'?(rates.USD||0):1):i.type==='fx'?i.amount*(rates[i.cur]||0):i.amount;
+const krw=i=>i.type==='sec'?(i.krw||0)+(i.usd||0)*(rates.USD||0):i.type==='fx'?i.amount*(rates[i.cur]||0):i.amount;
 const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const main=i=>i.type==='sec'?'₩'+fmt(Math.round(krw(i))):i.type==='out'||i.type==='in'?'₩'+fmt(i.amount):i.type==='fx'?CURS[i.cur]+fmt(i.amount,i.cur==='JPY'?0:2):(i.amount<0?'-':'')+'₩'+fmt(Math.abs(i.amount));
-const sub=i=>i.note?i.note:(i.type==='sec'?`${i.ticker} ${fmtN(i.qty,4)}주`:i.type==='fx'&&rates[i.cur]?'₩'+fmt(Math.round(krw(i))):'');
+const sub=i=>i.note?i.note:(i.type==='sec'?`$${fmtN(i.usd||0,2)} · ₩${fmt(Math.round(i.krw||0))}`:i.type==='fx'&&rates[i.cur]?'₩'+fmt(Math.round(krw(i))):'');
 const pill=t=>`<span class="pill t-${t}">${LBL[t]}</span>`;
 
 // colors: per-type hue, varying lightness per account
@@ -270,7 +283,7 @@ function detailHtml(i){
   }else h=tx('계좌명','name',i.name)+nu('금액','amount',i.amount,0);
   return `<div class="detail${editing?' edit':''}">${h}<div class="da"><button type="button" class="ib${editing?' on':''}" data-act="edit" aria-label="수정">${ICON_EDIT}</button><button type="button" class="ib dl2" data-act="del" aria-label="삭제">${ICON_DEL}</button></div></div>`;
 }
-const FIELDS=['type','name','amount','cur','ticker','price','qty'];
+const FIELDS=['type','name','amount','cur','usd','krw'];
 const pickF=o=>{const f={};FIELDS.forEach(k=>{if(o[k]!==undefined)f[k]=o[k]});return f};
 // asset state at month key K (assets persist until deleted; edits apply from their month on)
 function snapAt(it,K){
@@ -425,9 +438,9 @@ $('#add').onclick=()=>{if(flowOpen()){closeFlow();return}openEntry('asset')};
 // entry popup (자산) on the expanding dock
 const popKey=()=>keyOf(baseM()+mo);
 let ent=null;
-const blankEnt=()=>({adj:0,src:null,id:null,month:null,atype:'cash',name:'',amount:'',cur:'USD',ticker:'',price:'',qty:'',scur:'KRW'});
+const blankEnt=()=>({adj:0,src:null,id:null,month:null,atype:'cash',name:'',amount:'',cur:'USD',usd:'',krw:''});
 function syncEnt(){
-  const map={iname:'name',iamt:'amount',iticker:'ticker',iprice:'price',iqty:'qty',icur:'cur',iscur:'scur'};
+  const map={iname:'name',iamt:'amount',iusd:'usd',ikrw:'krw',icur:'cur'};
   Object.entries(map).forEach(([id,k])=>{const e=$('#'+id);if(e)ent[k]=e.value});
 }
 function bodyHtml(){
@@ -436,7 +449,7 @@ function bodyHtml(){
   const name=`<input id="iname" placeholder="${e.atype==='sec'?'계좌명':'이름'}" maxlength="30" value="${v(e.name)}">`;
   const amt=d=>`<input id="iamt" placeholder="금액" inputmode="decimal" data-d="${d}" value="${v(e.amount)}">`;
   if(e.atype==='sec')
-    return `<label class="f">${name}</label><div class="xr"><input id="iticker" placeholder="종목" maxlength="30" value="${v(e.ticker)}"><select id="iscur"><option value="KRW"${e.scur==='KRW'?' selected':''}>원</option><option value="USD"${e.scur==='USD'?' selected':''}>달러</option></select></div><div class="xr"><input id="iprice" placeholder="평단가" inputmode="decimal" data-d="2" value="${v(e.price)}"><input id="iqty" placeholder="수량" inputmode="decimal" data-d="4" value="${v(e.qty)}"></div><div class="xr">${save}</div>`;
+    return `<label class="f">${name}</label><div class="xr"><input id="iusd" placeholder="달러($)" inputmode="decimal" data-d="2" value="${v(e.usd)}"><input id="ikrw" placeholder="원화(₩)" inputmode="decimal" data-d="0" value="${v(e.krw)}"></div><div class="xr">${save}</div>`;
   if(e.atype==='fx')
     return `<div class="xr">${name}<select id="icur">${Object.keys(CURS).map(c=>`<option${c===e.cur?' selected':''}>${c}</option>`).join('')}</select></div><div class="xr">${amt(e.cur==='JPY'?0:2)}${save}</div>`;
   return `<label class="f">${name}</label><div class="xr">${amt(0)}${save}</div>`;
@@ -455,9 +468,9 @@ function openEntry(kind,id){
     let eff=null;if(a){eff=build(mo).vi.find(x=>x.id===id)||null}
     const adj=(a&&eff&&a.type!=='sec'&&a.amount!=null&&eff.amount!=null)?eff.amount-a.amount:0;
     if(a)Object.assign(ent,{adj,id,src:'asset',month:raw.month||null,atype:a.type,name:a.name,
-      cur:a.type==='fx'?a.cur:'USD',scur:a.type==='sec'?a.cur:'KRW',
+      cur:a.type==='fx'?a.cur:'USD',
       amount:a.amount!=null?fmtN(a.amount+adj,a.type==='fx'&&a.cur!=='JPY'?2:0):'',
-      ticker:a.ticker||'',price:a.price!=null?fmtN(a.price,2):'',qty:a.qty!=null?fmtN(a.qty,4):''});
+      usd:a.type==='sec'&&a.usd?fmtN(a.usd,2):'',krw:a.type==='sec'&&a.krw?fmtN(a.krw,0):''});
   }
   renderPop();
   $('#dock').classList.add('exp');$('#scrim').classList.add('on');
@@ -481,9 +494,9 @@ $('#iform').onsubmit=e=>{
   const id=ent.id||String(Date.now());
   const t=ent.atype;let obj;
   if(t==='sec'){
-    const ticker=ent.ticker.trim(),price=n(ent.price),qty=n(ent.qty);
-    if(!ticker||isNaN(price)||price<0||isNaN(qty)||qty<=0)return;
-    obj={id,type:'sec',name,ticker,price,qty,cur:ent.scur};
+    const usd=n(ent.usd)||0,krwV=n(ent.krw)||0;
+    if(usd<0||krwV<0||(usd===0&&krwV===0))return;
+    obj={id,type:'sec',name,usd:Math.round(usd*100)/100,krw:Math.round(krwV)};
   }else{
     let a=n(ent.amount);if(isNaN(a))return;
     if(ent.src==='asset')a-=(ent.adj||0);
@@ -623,7 +636,7 @@ async function pull(){
     const d=await rpc('moakr_get',{k:SK});
     if(pushT||dr||editing||$('#ov').classList.contains('open')||flowOpen())return;
     if(d&&Array.isArray(d.items)){
-      if(JSON.stringify(d.items)!==JSON.stringify(items)){items=d.items;ls.set('assets',items);render()}
+      if(JSON.stringify(d.items)!==JSON.stringify(items)){items=d.items;normItems();ls.set('assets',items);render()}
       if(Array.isArray(d.flows)&&JSON.stringify(d.flows)!==JSON.stringify(flows)){flows=d.flows;ls.set('flows',flows);render()}
       if(d.name&&d.name!==ls.get('name','사용자')){ls.set('name',d.name);nmEl.textContent=d.name}
     }else push();
